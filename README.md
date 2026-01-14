@@ -1,5 +1,7 @@
 # keyed
+
 [![R-CMD-check](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/gcol33/keyed/graph/badge.svg)](https://app.codecov.io/gh/gcol33/keyed)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Explicit Key Assumptions for Flat-File Data Workflows**
@@ -12,9 +14,16 @@ The `keyed` package helps you define and maintain key assumptions in data workfl
 library(keyed)
 library(dplyr)
 
-# Define a key - the only required action
+# The problem: assumptions live in comments and break silently
+users <- read.csv("users.csv")
+# user_id should be unique... right?
+# email should never be NA... I think?
+
+# The solution: make assumptions explicit
 users <- read.csv("users.csv") |>
-  key(user_id)
+  key(user_id) |>
+  assume_unique(user_id) |>
+  assume_no_na(email)
 
 # Keys survive transformations
 active_users <- users |>
@@ -24,26 +33,27 @@ active_users <- users |>
 has_key(active_users)
 #> [1] TRUE
 
-# Check assumptions
-assume_unique(users, user_id)
-assume_no_na(users, email)
-
-# Diagnose joins before running them
+# Catch issues before they cause problems
 diagnose_join(users, orders, by = "user_id")
 #> ── Join Diagnosis ──
 #> Cardinality: one-to-many
 #> x: 1000 rows, unique
 #> y: 5432 rows, 4432 duplicates
+
+# Track row identity across transformations
+users <- add_id(users)
+filtered <- users |> filter(active)
+get_id(filtered)  # Same IDs as original rows
 ```
 
 ## Statement of Need
 
 Working with flat files (CSVs, Excel exports) often means implicit assumptions about data structure: "this column should be unique", "these columns form a composite key", "there shouldn't be NAs here". These assumptions live in your head or scattered comments, breaking silently when data changes.
 
-`keyed` addresses this by providing:
+This package addresses this by providing:
 
 - **Explicit key definitions** that travel with the data through transformations
-- **Graceful degradation** - warnings when keys break, not hard failures
+- **Graceful degradation** — warnings when keys break, not hard failures
 - **Assumption checks** at boundaries (imports, exports, joins) rather than every operation
 - **Optional lineage tracking** with stable row IDs
 - **Drift detection** to catch changes between data versions
@@ -186,12 +196,16 @@ diagnose_join(users, orders, by = "user_id")
 
 ## Documentation
 
-- [Quick Start](https://gcol33.github.io/keyed/articles/quickstart.html)
-- [Function Reference](https://gcol33.github.io/keyed/reference/index.html)
+- [Quick Start](https://gillescolling.com/keyed/articles/quickstart.html)
+- [Function Reference](https://gillescolling.com/keyed/reference/index.html)
 
 ## Support
 
-If this package saved you some time, buying me a coffee is a nice way to say thanks.
+> "Software is like sex: it's better when it's free." — Linus Torvalds
+
+I'm a PhD student who builds R packages in my free time because I believe good tools should be free and open. I started these projects for my own work and figured others might find them useful too.
+
+If this package saved you some time, buying me a coffee is a nice way to say thanks. It helps with my coffee addiction.
 
 [![Buy Me A Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/gcol33)
 

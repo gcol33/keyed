@@ -12,13 +12,13 @@ Helps R users make implicit data assumptions explicit by attaching keys to flat-
 Useful links:
 \itemize{
   \item \url{https://github.com/gcol33/keyed}
-  \item \url{https://gcol33.github.io/keyed/}
+  \item \url{https://gillescolling.com/keyed/}
   \item Report bugs at \url{https://github.com/gcol33/keyed/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Gilles Colling \email{gillescolling@gmail.com}
+\strong{Maintainer}: Gilles Colling \email{gillescolling@gmail.com} (\href{https://orcid.org/0000-0003-3070-6066}{ORCID}) [copyright holder]
 
 }
 \keyword{internal}

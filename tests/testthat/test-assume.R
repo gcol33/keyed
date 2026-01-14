@@ -60,3 +60,67 @@ test_that("assume functions return data invisibly for piping", {
   result <- assume_unique(df, id)
   expect_identical(result, df)
 })
+
+test_that("assume_unique errors when no columns specified", {
+  df <- data.frame(id = 1:3, x = 1:3)
+  expect_error(assume_unique(df), "At least one column")
+})
+
+test_that("assume_unique errors when column not found", {
+  df <- data.frame(id = 1:3, x = 1:3)
+  expect_error(assume_unique(df, nonexistent), "not found")
+})
+
+test_that("assume_no_na checks all columns when none specified", {
+  df <- data.frame(id = 1:3, x = c("a", NA, "c"))
+  expect_warning(assume_no_na(df), "No-NA assumption violated")
+})
+
+test_that("assume_no_na errors when column not found", {
+  df <- data.frame(id = 1:3, x = 1:3)
+  expect_error(assume_no_na(df, nonexistent), "not found")
+})
+
+test_that("assume_no_na errors in strict mode", {
+  df <- data.frame(id = 1:3, x = c("a", NA, "c"))
+  expect_error(assume_no_na(df, x, .strict = TRUE), class = "keyed_assumption_error")
+})
+
+test_that("assume_coverage errors with invalid threshold", {
+  df <- data.frame(id = 1:3, x = 1:3)
+  expect_error(assume_coverage(df, 1.5, x), "between 0 and 1")
+  expect_error(assume_coverage(df, -0.1, x), "between 0 and 1")
+  expect_error(assume_coverage(df, c(0.5, 0.6), x), "single number")
+})
+
+test_that("assume_coverage errors when column not found", {
+  df <- data.frame(id = 1:3, x = 1:3)
+  expect_error(assume_coverage(df, 0.8, nonexistent), "not found")
+})
+
+test_that("assume_coverage handles empty data frame", {
+  df <- data.frame(id = integer(), x = integer())
+  expect_silent(assume_coverage(df, 0.9))
+})
+
+test_that("assume_coverage checks all columns when none specified", {
+  df <- data.frame(id = 1:10, x = c(1:8, NA, NA))
+  expect_warning(assume_coverage(df, 0.9), "Coverage assumption violated")
+})
+
+test_that("assume_coverage errors in strict mode", {
+  df <- data.frame(id = 1:10, x = c(1:8, NA, NA))
+  expect_error(assume_coverage(df, 0.9, x, .strict = TRUE), class = "keyed_assumption_error")
+})
+
+test_that("assume_nrow with max constraint", {
+  df <- data.frame(id = 1:100)
+  expect_silent(assume_nrow(df, min = 0, max = 200))
+  expect_warning(assume_nrow(df, min = 0, max = 50), "Row count assumption violated")
+})
+
+test_that("assume_nrow errors in strict mode", {
+  df <- data.frame(id = 1:100)
+  expect_error(assume_nrow(df, expected = 50, .strict = TRUE), class = "keyed_assumption_error")
+  expect_error(assume_nrow(df, min = 200, .strict = TRUE), class = "keyed_assumption_error")
+})

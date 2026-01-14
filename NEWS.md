@@ -1,3 +1,10 @@
+# keyed 0.1.1
+
+* Added Codecov integration for test coverage tracking
+* Improved README with problem-solution framing in Quick Start
+* Added CONTRIBUTING.md with contribution guidelines
+* Expanded test suite to 90%+ coverage
+
 # keyed 0.1.0
 
 ## Initial Release
