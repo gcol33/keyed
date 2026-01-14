@@ -239,6 +239,164 @@ make_id <- function(.data, ..., .id = ".id", .sep = "|") {
 }
 
 
+#' Check ID integrity
+#'
+#' Validates ID column for common issues: missing values, duplicates,
+#' and suspicious formats.
+#'
+#' @param .data A data frame with ID column.
+#' @param .id Column name (default: ".id").
+#'
+#' @return Invisibly returns a list with:
+#'   - `valid`: TRUE if no issues found
+#'   - `n_na`: count of NA values
+#'   - `n_duplicates`: count of duplicate IDs
+#'   - `format_ok`: TRUE if IDs look like proper UUIDs/hashes
+#'
+#' @examples
+#' df <- add_id(data.frame(x = 1:3))
+#' check_id(df)
+#'
+#' @export
+check_id <- function(.data, .id = ".id") {
+  if (!.id %in% names(.data)) {
+    abort(c(
+      paste0("Column '", .id, "' not found."),
+      i = "Use add_id() to create an ID column."
+    ))
+  }
+
+  ids <- .data[[.id]]
+  issues <- FALSE
+
+
+  # Check for NAs
+  n_na <- sum(is.na(ids))
+  if (n_na > 0) {
+    warn(c(
+      paste0(n_na, " NA value(s) in ID column."),
+      i = "Use extend_id() to fill missing IDs."
+    ))
+    issues <- TRUE
+  }
+
+  # Check for duplicates
+  non_na_ids <- ids[!is.na(ids)]
+  n_dups <- length(non_na_ids) - length(unique(non_na_ids))
+  if (n_dups > 0) {
+    warn(c(
+      paste0(n_dups, " duplicate ID(s) found."),
+      i = "IDs should be unique per row."
+    ))
+    issues <- TRUE
+  }
+
+  # Check format (should be UUID-like or hash-like, not short/numeric)
+  format_ok <- TRUE
+  if (length(non_na_ids) > 0) {
+    # UUIDs are 36 chars, xxhash64 is 16 chars
+    min_length <- min(nchar(non_na_ids))
+    if (min_length < 8) {
+      warn(c(
+        "Some IDs appear suspiciously short.",
+        i = "Expected UUID (36 chars) or hash (16 chars) format."
+      ))
+      format_ok <- FALSE
+      issues <- TRUE
+    }
+
+    # Check if all numeric (likely row numbers, not UUIDs)
+    if (all(grepl("^[0-9]+$", non_na_ids))) {
+      warn(c(
+        "IDs appear to be numeric sequences.",
+        i = "Consider using add_id() for proper UUIDs."
+      ))
+      format_ok <- FALSE
+      issues <- TRUE
+    }
+  }
+
+  if (!issues) {
+    cli::cli_alert_success("ID column is valid: {length(ids)} unique IDs, no issues.")
+  }
+
+  invisible(list(
+    valid = !issues,
+    n_na = n_na,
+    n_duplicates = n_dups,
+    format_ok = format_ok
+  ))
+}
+
+
+#' Check IDs are disjoint across datasets
+#'
+#' Verifies that ID columns don't overlap between datasets.
+#' Useful before binding datasets to ensure no ID collisions.
+#'
+#' @param ... Data frames to check.
+#' @param .id Column name for IDs (default: ".id").
+#'
+#' @return Invisibly returns a list with:
+#'   - `disjoint`: TRUE if no overlaps found
+#'   - `overlaps`: character vector of overlapping IDs (if any)
+#'
+#' @examples
+#' df1 <- add_id(data.frame(x = 1:3))
+#' df2 <- add_id(data.frame(x = 4:6))
+#' check_id_disjoint(df1, df2)
+#'
+#' @export
+check_id_disjoint <- function(..., .id = ".id") {
+  dfs <- list(...)
+
+  if (length(dfs) < 2) {
+    abort("At least two data frames required.")
+  }
+
+  # Extract IDs from each data frame
+  all_ids <- list()
+  for (i in seq_along(dfs)) {
+    df <- dfs[[i]]
+    if (!.id %in% names(df)) {
+      abort(c(
+        paste0("Data frame ", i, " does not have column '", .id, "'."),
+        i = "All data frames must have the ID column."
+      ))
+    }
+    ids <- df[[.id]]
+    ids <- ids[!is.na(ids)]
+    all_ids[[i]] <- ids
+  }
+
+  # Find overlaps between all pairs
+  overlaps <- character()
+  for (i in seq_len(length(all_ids) - 1)) {
+    for (j in (i + 1):length(all_ids)) {
+      common <- intersect(all_ids[[i]], all_ids[[j]])
+      overlaps <- union(overlaps, common)
+    }
+  }
+
+  if (length(overlaps) > 0) {
+    n_show <- min(5, length(overlaps))
+    shown <- overlaps[seq_len(n_show)]
+    warn(c(
+      paste0(length(overlaps), " overlapping ID(s) found between datasets."),
+      i = paste0("First ", n_show, ": ", paste(shown, collapse = ", ")),
+      i = "This may indicate duplicate data or ID reuse."
+    ))
+  } else {
+    cli::cli_alert_success("All IDs are disjoint across {length(dfs)} datasets.")
+  }
+
+  invisible(list(
+    disjoint = length(overlaps) == 0,
+    overlaps = overlaps
+  ))
+}
+
+
 # Helpers ----------------------------------------------------------------------
 
 #' Generate unique IDs

@@ -97,3 +97,90 @@ test_that("make_id errors on existing column", {
   df <- data.frame(.id = 1:3, x = 1:3)
   expect_error(make_id(df, x), "already exists")
 })
+
+# check_id tests ---------------------------------------------------------------
+
+test_that("check_id validates good IDs", {
+  df <- add_id(data.frame(x = 1:3))
+  result <- check_id(df)
+
+  expect_true(result$valid)
+  expect_equal(result$n_na, 0)
+  expect_equal(result$n_duplicates, 0)
+  expect_true(result$format_ok)
+})
+
+test_that("check_id warns on NAs", {
+  df <- data.frame(.id = c("abc123def456", NA, "xyz789ghi012"), x = 1:3)
+  expect_warning(result <- check_id(df), "NA value")
+
+  expect_false(result$valid)
+  expect_equal(result$n_na, 1)
+})
+
+test_that("check_id warns on duplicates", {
+  df <- data.frame(.id = c("abc123def456", "abc123def456", "xyz789ghi012"), x = 1:3)
+  expect_warning(result <- check_id(df), "duplicate")
+
+  expect_false(result$valid)
+  expect_equal(result$n_duplicates, 1)
+})
+
+test_that("check_id warns on short IDs", {
+  df <- data.frame(.id = c("abc", "def", "ghi"), x = 1:3)
+  expect_warning(result <- check_id(df), "short")
+
+  expect_false(result$format_ok)
+})
+
+test_that("check_id warns on numeric IDs", {
+  df <- data.frame(.id = c("1", "2", "3"), x = 1:3)
+  expect_warning(result <- check_id(df), "numeric")
+
+  expect_false(result$format_ok)
+})
+
+test_that("check_id errors without ID column", {
+  df <- data.frame(x = 1:3)
+  expect_error(check_id(df), "not found")
+})
+
+# check_id_disjoint tests ------------------------------------------------------
+
+test_that("check_id_disjoint passes for disjoint IDs", {
+  df1 <- add_id(data.frame(x = 1:3))
+  df2 <- add_id(data.frame(x = 4:6))
+  result <- check_id_disjoint(df1, df2)
+
+  expect_true(result$disjoint)
+  expect_length(result$overlaps, 0)
+})
+
+test_that("check_id_disjoint warns on overlaps", {
+  df1 <- data.frame(.id = c("a", "b", "c"), x = 1:3)
+  df2 <- data.frame(.id = c("b", "c", "d"), x = 4:6)
+  expect_warning(result <- check_id_disjoint(df1, df2), "overlapping")
+
+  expect_false(result$disjoint)
+  expect_equal(sort(result$overlaps), c("b", "c"))
+})
+
+test_that("check_id_disjoint works with multiple datasets", {
+  df1 <- data.frame(.id = c("a", "b"), x = 1:2)
+  df2 <- data.frame(.id = c("c", "d"), x = 3:4)
+  df3 <- data.frame(.id = c("e", "f"), x = 5:6)
+  result <- check_id_disjoint(df1, df2, df3)
+
+  expect_true(result$disjoint)
+})
+
+test_that("check_id_disjoint errors with single dataset", {
+  df <- add_id(data.frame(x = 1:3))
+  expect_error(check_id_disjoint(df), "At least two")
+})
+
+test_that("check_id_disjoint errors without ID column", {
+  df1 <- add_id(data.frame(x = 1:3))
+  df2 <- data.frame(x = 4:6)  # No ID
+  expect_error(check_id_disjoint(df1, df2), "does not have")
+})

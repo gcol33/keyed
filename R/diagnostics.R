@@ -26,7 +26,7 @@ key_status <- function(.data) {
     nrow = nrow(.data),
     ncol = ncol(.data),
     colnames = names(.data),
-    has_row_id = has_row_id(.data),
+    has_row_id = has_id(.data),
     has_snapshot = !is.null(attr(.data, "keyed_snapshot_ref"))
   )
 
