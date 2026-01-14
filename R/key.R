@@ -216,7 +216,8 @@ print.keyed_df <- function(x, ...) {
   key_cols <- get_key_cols(x)
   if (!is.null(key_cols)) {
     key_str <- paste(key_cols, collapse = ", ")
-    cli::cli_text("{.cls keyed_df} with key: {.field {key_str}}")
+    id_str <- if (has_id(x)) " | has .id" else ""
+    cli::cli_text("{.cls keyed_df} with key: {.field {key_str}}{id_str}")
   }
   NextMethod()
 }
@@ -226,9 +227,84 @@ print.keyed_df <- function(x, ...) {
 tbl_sum.keyed_df <- function(x, ...) {
   key_cols <- get_key_cols(x)
   key_str <- if (!is.null(key_cols)) paste(key_cols, collapse = ", ") else "none"
+  if (has_id(x)) key_str <- paste0(key_str, " | .id")
 
   c(
     "A keyed tibble" = paste0(nrow(x), " x ", ncol(x)),
     "Key" = key_str
   )
+}
+
+#' Summary method for keyed data frames
+#'
+#' @param object A keyed data frame.
+#' @param ... Additional arguments (ignored).
+#'
+#' @return Invisibly returns a summary list.
+#'
+#' @export
+summary.keyed_df <- function(object, ...) {
+  key_cols <- get_key_cols(object)
+
+  cli::cli_h3("Keyed Data Frame Summary")
+  cli::cli_text("Dimensions: {nrow(object)} rows x {ncol(object)} columns")
+
+  # Key info
+  if (!is.null(key_cols)) {
+    cli::cli_text("")
+    cli::cli_text("{.strong Key columns}: {.field {paste(key_cols, collapse = ', ')}}")
+
+    # Check key validity
+    if (all(key_cols %in% names(object))) {
+      key_vals <- object[key_cols]
+      n_unique <- vctrs::vec_unique_count(key_vals)
+      n_na <- sum(rowSums(is.na(key_vals)) > 0)
+
+      if (n_unique == nrow(object)) {
+        cli::cli_alert_success("Key is unique")
+      } else {
+        cli::cli_alert_warning("{nrow(object) - n_unique} duplicate key value(s)")
+      }
+      if (n_na > 0) {
+        cli::cli_alert_warning("{n_na} row(s) with NA in key")
+      }
+    } else {
+      missing <- setdiff(key_cols, names(object))
+      cli::cli_alert_danger("Key column(s) missing: {paste(missing, collapse = ', ')}")
+    }
+  } else {
+    cli::cli_text("{.strong Key}: none")
+  }
+
+  # ID info
+  cli::cli_text("")
+  if (has_id(object)) {
+    ids <- object[[".id"]]
+    n_na <- sum(is.na(ids))
+    n_unique <- length(unique(ids[!is.na(ids)]))
+    n_dups <- length(ids) - n_na - n_unique
+
+    cli::cli_text("{.strong Row IDs}: present (.id column)")
+    if (n_na == 0 && n_dups == 0) {
+      cli::cli_alert_success("{n_unique} unique IDs, no issues")
+    } else {
+      if (n_na > 0) cli::cli_alert_warning("{n_na} missing ID(s)")
+      if (n_dups > 0) cli::cli_alert_warning("{n_dups} duplicate ID(s)")
+    }
+  } else {
+    cli::cli_text("{.strong Row IDs}: none")
+  }
+
+  # Snapshot info
+  if (!is.null(attr(object, "keyed_snapshot_ref"))) {
+    cli::cli_text("")
+    cli::cli_text("{.strong Snapshot}: committed")
+  }
+
+  invisible(list(
+    nrow = nrow(object),
+    ncol = ncol(object),
+    key_cols = key_cols,
+    has_id = has_id(object)
+  ))
 }
