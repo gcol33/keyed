@@ -1,0 +1,191 @@
+---
+title: "Getting Started with keyed"
+author: "Gilles Colling"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with keyed}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(keyed)
+library(dplyr)
+```
+
+## Overview
+
+**keyed** makes key assumptions explicit in flat-file data workflows. Define keys once, validate at creation, and let the package warn you when assumptions break.
+
+**Key features:**
+
+- Define keys with `key()` - single or composite columns
+- Keys survive dplyr transformations (filter, mutate, arrange, etc.)
+- Assumption checks with `assume_unique()`, `assume_no_na()`, etc.
+- Join diagnostics with `diagnose_join()`
+- Optional row IDs for lineage tracking with `add_id()`
+- Snapshot-based drift detection with `commit_keyed()` and `check_drift()`
+
+## Installation
+
+```{r eval=FALSE}
+# install.packages("pak")
+pak::pak("gcol33/keyed")
+```
+
+## Basic Usage
+
+### Defining Keys
+
+The only required action is defining a key:
+
+```{r}
+library(keyed)
+library(dplyr)
+
+# Create sample data
+users <- data.frame(
+  user_id = 1:5,
+  name = c("Alice", "Bob", "Carol", "Dave", "Eve"),
+  email = c("alice@example.com", "bob@example.com", "carol@example.com",
+            "dave@example.com", "eve@example.com")
+)
+
+# Define the key
+users <- key(users, user_id)
+users
+```
+
+### Keys Survive Transformations
+
+The key persists through dplyr operations:
+
+```{r}
+# Filter preserves key
+active <- users |> filter(user_id <= 3)
+has_key(active)
+
+# Mutate preserves key
+enriched <- users |> mutate(domain = sub(".*@", "", email))
+get_key_cols(enriched)
+```
+
+If an operation breaks uniqueness, the key degrades gracefully:
+
+```{r}
+# This would create duplicates - key is dropped with warning
+users |> mutate(user_id = 1)
+```
+
+### Composite Keys
+
+Use multiple columns as a key:
+
+```{r}
+orders <- data.frame(
+  customer_id = c(1, 1, 2, 2),
+  order_date = c("2024-01-01", "2024-01-02", "2024-01-01", "2024-01-03"),
+  amount = c(100, 150, 200, 75)
+)
+
+orders <- key(orders, customer_id, order_date)
+orders
+```
+
+## Assumption Checks
+
+Validate assumptions at key points in your workflow:
+```{r}
+# Check uniqueness
+assume_unique(users, user_id)
+
+# Check for missing values
+assume_no_na(users, email)
+
+# Check row count expectations
+assume_nrow(users, min = 1, max = 100)
+```
+
+## Join Diagnostics
+
+Before joining, diagnose the cardinality:
+
+```{r}
+orders <- data.frame(
+  order_id = 1:6,
+  user_id = c(1, 1, 2, 3, 3, 3),
+  amount = c(100, 150, 200, 50, 75, 125)
+)
+
+diagnose_join(users, orders, by = "user_id")
+```
+
+## Row Identity Tracking
+
+For lineage tracking, add stable UUIDs to rows:
+
+```{r}
+# Add IDs
+users_tracked <- users |> add_id()
+users_tracked
+
+# Check ID status
+summary(users_tracked)
+```
+
+### Combining Data with IDs
+
+When combining datasets, use `bind_id()` to handle IDs properly:
+
+```{r}
+# Existing data with IDs
+batch1 <- add_id(data.frame(x = 1:3))
+
+# New data without IDs
+batch2 <- data.frame(x = 4:6)
+
+# Combine - checks for overlaps and fills missing IDs
+combined <- bind_id(batch1, batch2)
+combined
+```
+
+### Composite IDs from Columns
+
+Create deterministic IDs from column values:
+
+```{r}
+sales <- data.frame(
+  country = c("US", "UK", "US"),
+  year = c(2023, 2023, 2024),
+  revenue = c(1000, 800, 1200)
+)
+
+sales <- make_id(sales, country, year)
+sales
+```
+
+## Drift Detection
+
+Track changes over time with snapshots:
+
+```{r}
+# Commit a snapshot
+users <- commit_keyed(users)
+
+# Later, check for drift
+check_drift(users)
+
+# Clean up
+clear_all_snapshots()
+```
+
+## What's Next
+
+- See [Row Identity](row-identity.html) for detailed ID tracking
+- See [Drift Detection](drift-detection.html) for snapshot workflows
+- See [joinspy](https://github.com/gcol33/joinspy) for enhanced join diagnostics

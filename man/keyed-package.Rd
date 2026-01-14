@@ -6,10 +6,19 @@
 \alias{keyed-package}
 \title{keyed: Explicit Key Assumptions for Flat-File Data}
 \description{
-Helps R users make implicit data assumptions explicit by attaching keys to flat-file data and warning when those assumptions are violated. Designed for CSV-first workflows without databases, schemas, or version control. Provides key definition, assumption checks, validated joins, and optional drift detection against reference snapshots.
+Helps R users make implicit data assumptions explicit by attaching keys to flat-file data and warning when those assumptions are violated. Designed for CSV-first workflows without databases, schemas, or version control. Provides key definition, assumption checks, join diagnostics, and optional drift detection against reference snapshots.
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/gcol33/keyed}
+  \item \url{https://gcol33.github.io/keyed/}
+  \item Report bugs at \url{https://github.com/gcol33/keyed/issues}
+}
+
 }
 \author{
-\strong{Maintainer}: Gilles Colling \email{gilles@example.com}
+\strong{Maintainer}: Gilles Colling \email{gillescolling@gmail.com}
 
 }
 \keyword{internal}

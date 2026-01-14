@@ -1,6 +1,52 @@
 # keyed
+[![R-CMD-check](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Explicit key assumptions for flat-file data workflows.
+**Explicit Key Assumptions for Flat-File Data Workflows**
+
+The `keyed` package helps you define and maintain key assumptions in data workflows where you work with CSVs, Excel files, and other flat files without database schemas. Define keys once, validate at creation, and get warnings when assumptions break.
+
+## Quick Start
+
+```r
+library(keyed)
+library(dplyr)
+
+# Define a key - the only required action
+users <- read.csv("users.csv") |>
+  key(user_id)
+
+# Keys survive transformations
+active_users <- users |>
+  filter(status == "active") |>
+  mutate(domain = sub(".*@", "", email))
+
+has_key(active_users)
+#> [1] TRUE
+
+# Check assumptions
+assume_unique(users, user_id)
+assume_no_na(users, email)
+
+# Diagnose joins before running them
+diagnose_join(users, orders, by = "user_id")
+#> ── Join Diagnosis ──
+#> Cardinality: one-to-many
+#> x: 1000 rows, unique
+#> y: 5432 rows, 4432 duplicates
+```
+
+## Statement of Need
+
+Working with flat files (CSVs, Excel exports) often means implicit assumptions about data structure: "this column should be unique", "these columns form a composite key", "there shouldn't be NAs here". These assumptions live in your head or scattered comments, breaking silently when data changes.
+
+`keyed` addresses this by providing:
+
+- **Explicit key definitions** that travel with the data through transformations
+- **Graceful degradation** - warnings when keys break, not hard failures
+- **Assumption checks** at boundaries (imports, exports, joins) rather than every operation
+- **Optional lineage tracking** with stable row IDs
+- **Drift detection** to catch changes between data versions
 
 ## Installation
 
@@ -9,117 +55,112 @@ Explicit key assumptions for flat-file data workflows.
 pak::pak("gcol33/keyed")
 ```
 
-## Typical Workflow
+## Features
+
+### Key Definition
 
 ```r
-library(keyed)
-library(dplyr)
+# Single key
+users <- key(data, user_id)
 
-# ─── 1. Load and key your data ───────────────────────────────────────────────
+# Composite key
+orders <- key(data, customer_id, order_date)
 
-users <- read.csv("users.csv") |>
-  key(user_id)
+# Check key status
+has_key(users)
+get_key_cols(users)
+key_is_valid(users)
+```
 
-orders <- read.csv("orders.csv") |>
-  key(order_id)
+### Assumption Checks
 
-# keyed_df prints its key
-users
-#> keyed_df with key: user_id
-#> # A tibble: 1,000 x 4
-#>    user_id name       email              created_at
-#>      <int> <chr>      <chr>              <date>
-#>  1       1 Alice      alice@example.com  2024-01-15
-#>  2       2 Bob        bob@example.com    2024-01-16
-#> ...
+```r
+# Uniqueness
+assume_unique(data, col1, col2)
 
-# ─── 2. Check assumptions before operations ──────────────────────────────────
+# Missing values
+assume_no_na(data, required_col)
 
-# Verify key is unique (it should be - we defined it)
-assume_unique(users, user_id)
+# Completeness (all expected values present)
+assume_complete(data, category, expected = c("A", "B", "C"))
 
-# Check for completeness before analysis
-assume_no_na(users, email)
+# Coverage (reference values covered)
+assume_coverage(data, id, reference = ref_data$id)
 
-# ─── 3. Diagnose joins before running them ───────────────────────────────────
+# Row count
+assume_nrow(data, min = 100, max = 10000)
+```
 
-diagnose_join(users, orders, by = c("user_id" = "customer_id"))
+### Join Diagnostics
+
+```r
+# Analyze join before executing
+diagnose_join(users, orders, by = "user_id")
 #> ── Join Diagnosis ──
 #> Cardinality: one-to-many
 #> x: 1000 rows, unique
 #> y: 5432 rows, 4432 duplicates
 
-# For validated joins with cardinality enforcement, use joinspy
-# joinspy::left_join_spy(), joinspy::join_strict(), etc.
+# For validated joins, use joinspy
+# pak::pak("gcol33/joinspy")
+```
 
-# ─── 4. Key survives transformations ─────────────────────────────────────────
+### Row Identity Tracking
 
-# filter, mutate, arrange preserve the key
-active_users <- users |>
-  filter(created_at > "2024-01-01") |>
-  mutate(domain = sub(".*@", "", email))
+Opt-in stable UUIDs for lineage tracking:
 
-has_key(active_users)
-#> [1] TRUE
+```r
+# Add IDs to rows
+users <- add_id(users)
 
-# Operations that break uniqueness drop the key with a warning
-users |>
-  mutate(user_id = 1)
-#> Warning: Key modified and is no longer unique.
+# IDs persist through transformations
+filtered <- users |> filter(active)
+get_id(filtered)  # Same IDs as original rows
 
-# ─── 5. Track drift over time (opt-in) ───────────────────────────────────────
+# Combine data with ID handling
+combined <- bind_id(batch1, batch2)  # Checks overlaps, fills missing
 
+# Create deterministic IDs from columns
+sales <- make_id(data, country, year)  # "US|2024"
+
+# Validate ID integrity
+check_id(data)
+check_id_disjoint(data1, data2)
+
+# Compare before/after
+compare_ids(before, after)
+#> $lost: 2 IDs
+#> $gained: 5 IDs
+#> $preserved: 998 IDs
+```
+
+### Drift Detection
+
+```r
 # Commit a reference snapshot
 users <- commit_keyed(users)
 #> ✓ Snapshot committed: a5ab1a98...
 
-# Later, after re-importing or transformations
-users_updated <- read.csv("users.csv") |>
-  key(user_id)
-
-# Check what changed
-check_drift(users_updated)
+# Later, check for changes
+check_drift(users)
 #> ── Drift Report ──
 #> ⚠ Drift detected
-#> Snapshot: a5ab1a98... (2024-03-15 10:30)
 #> ℹ Row count: 1000 -> 1024 (+24)
 #> ℹ Cell values modified
+```
 
-# ─── 6. Diagnostics ──────────────────────────────────────────────────────────
+### Diagnostics
 
+```r
 # Quick status check
 key_status(users)
-#> ── Key Status ──
-#> Key: user_id
-#> ✓ Key is valid and unique
-#> Rows: 1000, Columns: 4
+summary(users)
 
 # Compare keys between datasets
-compare_keys(users, users_updated)
-#> ── Key Comparison ──
-#> Comparing on: user_id
-#>
-#> x: 1000 unique keys
-#> y: 1024 unique keys
-#>
-#> Common: 1000 (100% of x)
-#> Only in x: 0
-#> Only in y: 24
+compare_keys(old_data, new_data)
 
-# Find problematic duplicates
-orders_bad <- data.frame(
-  order_id = c(1, 1, 2, 3, 3, 3),
-  amount = c(100, 100, 200, 300, 300, 300)
-)
-find_duplicates(orders_bad, order_id)
-#> # A tibble: 4 x 3
-#>   order_id amount    .n
-#>      <dbl>  <dbl> <int>
-#> 1        1    100     2
-#> 2        1    100     2
-#> 3        3    300     3
-#> 4        3    300     3
-#> 5        3    300     3
+# Find duplicates
+find_duplicates(data, key_col)
 ```
 
 ## Philosophy
@@ -142,3 +183,18 @@ diagnose_join(users, orders, by = "user_id")
 #> ── Pre-Join Diagnostic Report ──
 #> ... detailed whitespace, encoding, and match analysis ...
 ```
+
+## Documentation
+
+- [Getting Started](https://gcol33.github.io/keyed/articles/getting-started.html)
+- [Function Reference](https://gcol33.github.io/keyed/reference/index.html)
+
+## Support
+
+If this package saved you some time, buying me a coffee is a nice way to say thanks.
+
+[![Buy Me A Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/gcol33)
+
+## License
+
+MIT (see the LICENSE.md file)

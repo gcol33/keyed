@@ -1,14 +1,16 @@
 Package: keyed
 Title: Explicit Key Assumptions for Flat-File Data
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R:
-    person("Gilles", "Colling", , email = "gilles@example.com", role = c("aut", "cre"))
+    person("Gilles", "Colling", email = "gillescolling@gmail.com", role = c("aut", "cre"))
 Description: Helps R users make implicit data assumptions explicit by attaching
     keys to flat-file data and warning when those assumptions are violated.
     Designed for CSV-first workflows without databases, schemas, or version
-    control. Provides key definition, assumption checks, validated joins, and
+    control. Provides key definition, assumption checks, join diagnostics, and
     optional drift detection against reference snapshots.
 License: MIT + file LICENSE
+URL: https://github.com/gcol33/keyed, https://gcol33.github.io/keyed/
+BugReports: https://github.com/gcol33/keyed/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
@@ -24,6 +26,9 @@ Imports:
     vctrs (>= 0.5.0)
 Suggests:
     joinspy,
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0),
     uuid
+VignetteBuilder: knitr
 Config/testthat/edition: 3

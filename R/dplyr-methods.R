@@ -207,7 +207,9 @@ ungroup.keyed_df <- function(x, ...) {
 
 #' Bind rows of keyed data frames
 #'
-#' Wrapper for dplyr::bind_rows that attempts to preserve key.
+#' Bind keyed data frames
+#'
+#' Wrapper for [dplyr::bind_rows()] that attempts to preserve key metadata.
 #'
 #' @param ... Data frames to bind.
 #' @param .id Optional column name to identify source.
@@ -215,7 +217,7 @@ ungroup.keyed_df <- function(x, ...) {
 #' @return A keyed data frame if key is preserved and unique, otherwise tibble.
 #'
 #' @export
-bind_rows_keyed <- function(..., .id = NULL) {
+bind_keyed <- function(..., .id = NULL) {
   dfs <- list(...)
 
   # Get key from first keyed_df
