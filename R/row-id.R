@@ -3,20 +3,20 @@
 # Optional stable UUID per row for lineage tracking and debugging.
 # Explicit opt-in only. Loss of ID triggers warnings, not failure.
 
-#' Add row identity column
+#' Add identity column
 #'
 #' Adds a stable UUID column to each row. This is an opt-in feature for
 #' tracking row lineage through transformations.
 #'
 #' @param .data A data frame.
-#' @param .id Column name for the row ID (default: ".row_id").
+#' @param .id Column name for the ID (default: ".id").
 #' @param .overwrite If TRUE, overwrite existing ID column. If FALSE (default),
 #'   error if column exists.
 #'
-#' @return Data frame with row ID column added.
+#' @return Data frame with ID column added.
 #'
 #' @details
-#' Row IDs are generated using a hash of row content plus a random salt,
+#' IDs are generated using a hash of row content plus a random salt,
 #' making them stable for identical rows within a session but unique across
 #' different data frames.
 #'
@@ -25,12 +25,12 @@
 #'
 #' @examples
 #' df <- data.frame(x = 1:3, y = c("a", "b", "c"))
-#' df <- add_row_id(df)
+#' df <- add_id(df)
 #' df
 #'
 #' @export
-add_row_id <- function(.data, .id = ".row_id", .overwrite = FALSE) {
-  if (!is.character(.id) || length(.id) != 1) {
+add_id <- function(.data, .id = ".id", .overwrite = FALSE) {
+ if (!is.character(.id) || length(.id) != 1) {
     abort("`.id` must be a single string.")
   }
 
@@ -51,8 +51,8 @@ add_row_id <- function(.data, .id = ".row_id", .overwrite = FALSE) {
     return(.data)
   }
 
-  # Generate row IDs
-  ids <- generate_row_ids(n)
+  # Generate IDs
+  ids <- generate_ids(n)
 
   # Add column at the front
   .data <- tibble::add_column(.data, !!.id := ids, .before = 1)
@@ -60,73 +60,73 @@ add_row_id <- function(.data, .id = ".row_id", .overwrite = FALSE) {
   .data
 }
 
-#' Check if data frame has row IDs
+#' Check if data frame has IDs
 #'
 #' @param .data A data frame.
-#' @param .id Column name to check (default: ".row_id").
+#' @param .id Column name to check (default: ".id").
 #'
 #' @return Logical.
 #'
 #' @export
-has_row_id <- function(.data, .id = ".row_id") {
+has_id <- function(.data, .id = ".id") {
   .id %in% names(.data)
 }
 
-#' Get row ID column
+#' Get ID column
 #'
 #' @param .data A data frame.
-#' @param .id Column name (default: ".row_id").
+#' @param .id Column name (default: ".id").
 #'
-#' @return Character vector of row IDs, or NULL if not present.
+#' @return Character vector of IDs, or NULL if not present.
 #'
 #' @export
-get_row_id <- function(.data, .id = ".row_id") {
-  if (!has_row_id(.data, .id)) {
+get_id <- function(.data, .id = ".id") {
+  if (!has_id(.data, .id)) {
     return(NULL)
   }
   .data[[.id]]
 }
 
-#' Remove row ID column
+#' Remove ID column
 #'
 #' @param .data A data frame.
-#' @param .id Column name to remove (default: ".row_id").
+#' @param .id Column name to remove (default: ".id").
 #'
-#' @return Data frame without the row ID column.
+#' @return Data frame without the ID column.
 #'
 #' @export
-remove_row_id <- function(.data, .id = ".row_id") {
+remove_id <- function(.data, .id = ".id") {
   if (.id %in% names(.data)) {
     .data[[.id]] <- NULL
   }
   .data
 }
 
-#' Check for lost row IDs
+#' Compare IDs between data frames
 #'
-#' Compares row IDs between two data frames to detect lost rows.
+#' Compares IDs between two data frames to detect lost rows.
 #'
 #' @param before Data frame before transformation.
 #' @param after Data frame after transformation.
-#' @param .id Column name for row IDs (default: ".row_id").
+#' @param .id Column name for IDs (default: ".id").
 #'
 #' @return A list with:
-#'   - `lost`: Row IDs present in `before` but not `after`
-#'   - `gained`: Row IDs present in `after` but not `before`
-#'   - `preserved`: Row IDs present in both
+#'   - `lost`: IDs present in `before` but not `after`
+#'   - `gained`: IDs present in `after` but not `before`
+#'   - `preserved`: IDs present in both
 #'
 #' @examples
-#' df1 <- add_row_id(data.frame(x = 1:5))
+#' df1 <- add_id(data.frame(x = 1:5))
 #' df2 <- df1[1:3, ]
-#' compare_row_ids(df1, df2)
+#' compare_ids(df1, df2)
 #'
 #' @export
-compare_row_ids <- function(before, after, .id = ".row_id") {
-  if (!has_row_id(before, .id)) {
-    abort("'before' does not have row IDs.")
+compare_ids <- function(before, after, .id = ".id") {
+  if (!has_id(before, .id)) {
+    abort("'before' does not have IDs.")
   }
-  if (!has_row_id(after, .id)) {
-    warn("'after' does not have row IDs. Cannot compare.")
+  if (!has_id(after, .id)) {
+    warn("'after' does not have IDs. Cannot compare.")
     return(list(lost = character(), gained = character(), preserved = character()))
   }
 
@@ -143,9 +143,9 @@ compare_row_ids <- function(before, after, .id = ".row_id") {
 
 # Helpers ----------------------------------------------------------------------
 
-#' Generate unique row IDs
+#' Generate unique IDs
 #' @noRd
-generate_row_ids <- function(n) {
+generate_ids <- function(n) {
   if (n == 0) return(character(0))
 
   # Try uuid package first
