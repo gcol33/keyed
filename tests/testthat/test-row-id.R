@@ -184,3 +184,42 @@ test_that("check_id_disjoint errors without ID column", {
   df2 <- data.frame(x = 4:6)  # No ID
   expect_error(check_id_disjoint(df1, df2), "does not have")
 })
+
+# bind_id tests ----------------------------------------------------------------
+
+test_that("bind_id combines data frames with IDs", {
+  df1 <- add_id(data.frame(x = 1:3))
+  df2 <- add_id(data.frame(x = 4:6))
+  result <- bind_id(df1, df2)
+
+  expect_equal(nrow(result), 6)
+  expect_true(has_id(result))
+  expect_length(unique(result$.id), 6)
+})
+
+test_that("bind_id fills IDs for data without them", {
+  df1 <- add_id(data.frame(x = 1:3))
+  df2 <- data.frame(x = 4:6)  # No ID
+  result <- bind_id(df1, df2)
+
+  expect_equal(nrow(result), 6)
+  expect_false(any(is.na(result$.id)))
+  expect_length(unique(result$.id), 6)
+})
+
+test_that("bind_id warns on overlapping IDs", {
+  df1 <- data.frame(.id = c("a", "b"), x = 1:2)
+  df2 <- data.frame(.id = c("b", "c"), x = 3:4)
+  expect_warning(bind_id(df1, df2), "overlapping")
+})
+
+test_that("bind_id handles single data frame", {
+  df <- add_id(data.frame(x = 1:3))
+  result <- bind_id(df)
+  expect_equal(result, df)
+})
+
+test_that("bind_id handles empty input", {
+  result <- bind_id()
+  expect_equal(nrow(result), 0)
+})

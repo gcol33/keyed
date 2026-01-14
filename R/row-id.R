@@ -239,6 +239,68 @@ make_id <- function(.data, ..., .id = ".id", .sep = "|") {
 }
 
 
+#' Bind data frames with ID handling
+#'
+#' Binds data frames while properly handling ID columns. Checks for
+#' overlapping IDs, combines the data, and fills in missing IDs.
+#'
+#' @param ... Data frames to bind.
+#' @param .id Column name for IDs (default: ".id").
+#'
+#' @return Combined data frame with valid IDs for all rows.
+#'
+#' @details
+#' This function:
+#' 1. Checks if IDs overlap between datasets (warns if so)
+#' 2. Binds rows using [dplyr::bind_rows()]
+#' 3. Fills missing IDs using [extend_id()]
+#'
+#' Use this instead of `dplyr::bind_rows()` when working with ID columns.
+#'
+#' @examples
+#' df1 <- add_id(data.frame(x = 1:3))
+#' df2 <- data.frame(x = 4:6)
+#' combined <- bind_id(df1, df2)
+#'
+#' @export
+bind_id <- function(..., .id = ".id") {
+  dfs <- list(...)
+
+  if (length(dfs) == 0) {
+    return(data.frame())
+  }
+
+  if (length(dfs) == 1) {
+    return(dfs[[1]])
+  }
+
+  # Check which data frames have IDs
+  has_ids <- vapply(dfs, function(df) .id %in% names(df), logical(1))
+
+  # If multiple have IDs, check for overlaps
+  if (sum(has_ids) > 1) {
+    dfs_with_ids <- dfs[has_ids]
+    # Suppress the success message, only want warnings
+    suppressMessages(do.call(check_id_disjoint, c(dfs_with_ids, list(.id = .id))))
+  }
+
+  # Ensure all data frames have the ID column (NA for those without)
+  for (i in seq_along(dfs)) {
+    if (!has_ids[i]) {
+      dfs[[i]][[.id]] <- NA_character_
+    }
+  }
+
+  # Bind
+  result <- dplyr::bind_rows(dfs)
+
+  # Fill missing IDs
+  result <- extend_id(result, .id = .id)
+
+  result
+}
+
+
 #' Check ID integrity
 #'
 #' Validates ID column for common issues: missing values, duplicates,
