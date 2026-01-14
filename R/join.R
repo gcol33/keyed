@@ -2,6 +2,8 @@
 #
 # Wrappers around dplyr joins that validate expected cardinality and coverage.
 # Fail or warn at the operation boundary, not globally.
+#
+# Optionally integrates with joinspy for enhanced diagnostics when available.
 
 #' Left join with validation
 #'
@@ -288,19 +290,34 @@ normalize_by <- function(by, x, y) {
 #' Analyzes join cardinality without performing the full join.
 #' Useful for detecting many-to-many joins that would explode row count.
 #'
+#' If the joinspy package is installed, this function delegates to
+#' `joinspy::join_spy()` for enhanced diagnostics including whitespace
+#' detection, encoding issues, and detailed match analysis.
+#'
 #' @param x Left data frame.
 #' @param y Right data frame.
 #' @param by Join specification.
+#' @param use_joinspy If TRUE (default), use joinspy for enhanced diagnostics
+#'   when available. Set to FALSE to use built-in diagnostics only.
 #'
-#' @return A list with cardinality information.
+#' @return A list with cardinality information, or a JoinReport object if
+#'   joinspy is used.
 #'
 #' @examples
 #' x <- data.frame(id = c(1, 1, 2), a = 1:3)
 #' y <- data.frame(id = c(1, 1, 2), b = 4:6)
 #' diagnose_join(x, y, by = "id")
 #'
+#' @seealso `joinspy::join_spy()` for enhanced diagnostics (if installed)
+#'
 #' @export
-diagnose_join <- function(x, y, by = NULL) {
+diagnose_join <- function(x, y, by = NULL, use_joinspy = TRUE) {
+  # Use joinspy if available and requested
+ if (use_joinspy && has_joinspy()) {
+    return(joinspy::join_spy(x, y, by = by))
+  }
+
+  # Built-in diagnostics
   by_spec <- normalize_by(by, x, y)
 
   x_unique <- is_unique_on(x, by_spec$x)
@@ -379,4 +396,149 @@ estimate_join_size <- function(x, y, by_spec) {
   if (nrow(merged) == 0) return(0)
 
   sum(as.numeric(merged$x_n) * as.numeric(merged$y_n))
+}
+
+
+# joinspy integration ----------------------------------------------------------
+
+#' Check if joinspy is available
+#' @noRd
+has_joinspy <- function() {
+  requireNamespace("joinspy", quietly = TRUE)
+}
+
+#' Spy on a join operation
+#'
+#' Wrapper around `joinspy::join_spy()` for comprehensive pre-join diagnostics.
+#' If joinspy is not installed, falls back to [diagnose_join()].
+#'
+#' @inheritParams diagnose_join
+#'
+#' @return A JoinReport object (if joinspy available) or keyed_join_diagnosis.
+#'
+#' @examples
+#' x <- data.frame(id = 1:3, a = 1:3)
+#' y <- data.frame(id = 2:4, b = 1:3)
+#' spy_join(x, y, by = "id")
+#'
+#' @export
+spy_join <- function(x, y, by = NULL) {
+  if (has_joinspy()) {
+    joinspy::join_spy(x, y, by = by)
+  } else {
+    inform(c(
+      "Install joinspy for enhanced diagnostics:",
+      i = 'install.packages("joinspy")'
+    ))
+    diagnose_join(x, y, by = by, use_joinspy = FALSE)
+  }
+}
+
+#' Explain a join result
+#'
+#' Wrapper around `joinspy::join_explain()` to understand what happened
+#' during a join. If joinspy is not installed, provides basic row count info.
+#'
+#' @param before Data frame before join (the left table).
+#' @param after Data frame after join (the result).
+#' @param by Join columns used.
+#'
+#' @return A join explanation object.
+#'
+#' @examples
+#' x <- data.frame(id = 1:3, a = 1:3)
+#' y <- data.frame(id = c(1, 1, 2), b = 1:3)
+#' result <- dplyr::left_join(x, y, by = "id")
+#' explain_join(x, result, by = "id")
+#'
+#' @export
+explain_join <- function(before, after, by = NULL) {
+  if (has_joinspy()) {
+    joinspy::join_explain(before, after, by = by)
+  } else {
+    # Basic explanation without joinspy
+    n_before <- nrow(before)
+    n_after <- nrow(after)
+    ratio <- n_after / n_before
+
+    cli::cli_h3("Join Explanation")
+    cli::cli_text("Rows before: {n_before}")
+    cli::cli_text("Rows after: {n_after}")
+
+    if (ratio > 1) {
+      cli::cli_alert_warning("Row multiplication: {sprintf('%.1fx', ratio)}")
+    } else if (ratio < 1) {
+      cli::cli_alert_info("Rows reduced to {sprintf('%.1f%%', ratio * 100)}")
+    } else {
+      cli::cli_alert_success("Row count preserved")
+    }
+
+    inform(c(
+      "Install joinspy for detailed explanation:",
+      i = 'install.packages("joinspy")'
+    ))
+
+    invisible(list(
+      n_before = n_before,
+      n_after = n_after,
+      ratio = ratio
+    ))
+  }
+}
+
+#' Check key quality
+#'
+#' Wrapper around `joinspy::key_check()` for quick key quality assessment.
+#' If joinspy is not installed, checks basic uniqueness and NA counts.
+#'
+#' @param .data A data frame.
+#' @param ... Column names to check as keys.
+#'
+#' @return Key quality report.
+#'
+#' @examples
+#' df <- data.frame(id = c(1, 1, 2, NA), x = 1:4)
+#' check_key(df, id)
+#'
+#' @export
+check_key <- function(.data, ...) {
+  cols <- key_cols_from_dots(.data, ...)
+
+  if (length(cols) == 0) {
+    abort("At least one column must be specified.")
+  }
+
+  if (has_joinspy()) {
+    joinspy::key_check(.data, by = cols)
+  } else {
+    # Basic key check without joinspy
+    n_rows <- nrow(.data)
+    key_vals <- .data[cols]
+    n_unique <- vctrs::vec_unique_count(key_vals)
+    n_na <- sum(rowSums(is.na(key_vals)) > 0)
+    n_dups <- n_rows - n_unique
+
+    cli::cli_h3("Key Check: {paste(cols, collapse = ', ')}")
+    cli::cli_text("Rows: {n_rows}")
+    cli::cli_text("Unique keys: {n_unique}")
+
+    if (n_dups > 0) {
+      cli::cli_alert_warning("{n_dups} duplicate key(s)")
+    } else {
+      cli::cli_alert_success("All keys unique")
+    }
+
+    if (n_na > 0) {
+      cli::cli_alert_warning("{n_na} row(s) with NA in key")
+    }
+
+    invisible(list(
+      columns = cols,
+      n_rows = n_rows,
+      n_unique = n_unique,
+      n_duplicates = n_dups,
+      n_na = n_na,
+      is_unique = n_dups == 0
+    ))
+  }
 }
