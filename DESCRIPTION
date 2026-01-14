@@ -1,0 +1,28 @@
+Package: keyed
+Title: Explicit Key Assumptions for Flat-File Data
+Version: 0.0.0.9000
+Authors@R:
+    person("Gilles", "Colling", , email = "gilles@example.com", role = c("aut", "cre"))
+Description: Helps R users make implicit data assumptions explicit by attaching
+    keys to flat-file data and warning when those assumptions are violated.
+    Designed for CSV-first workflows without databases, schemas, or version
+    control. Provides key definition, assumption checks, validated joins, and
+    optional drift detection against reference snapshots.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.1.0)
+Imports:
+    cli,
+    dplyr (>= 1.0.0),
+    digest,
+    pillar,
+    rlang (>= 1.0.0),
+    tibble,
+    vctrs (>= 0.5.0)
+Suggests:
+    testthat (>= 3.0.0),
+    uuid
+Config/testthat/edition: 3
