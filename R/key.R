@@ -213,12 +213,8 @@ validate_key_uniqueness <- function(.data, key_cols, strict = FALSE) {
 
 #' @export
 print.keyed_df <- function(x, ...) {
-  key_cols <- get_key_cols(x)
-  if (!is.null(key_cols)) {
-    key_str <- paste(key_cols, collapse = ", ")
-    id_str <- if (has_id(x)) " | has .id" else ""
-    cli::cli_text("{.cls keyed_df} with key: {.field {key_str}}{id_str}")
-  }
+  # Just use tibble's print - tbl_sum adds key info to header
+
   NextMethod()
 }
 
