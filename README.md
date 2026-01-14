@@ -41,25 +41,16 @@ assume_unique(users, user_id)
 # Check for completeness before analysis
 assume_no_na(users, email)
 
-# ─── 3. Safe joins with explicit expectations ────────────────────────────────
+# ─── 3. Diagnose joins before running them ───────────────────────────────────
 
-# Diagnose join before running it
 diagnose_join(users, orders, by = c("user_id" = "customer_id"))
 #> ── Join Diagnosis ──
 #> Cardinality: one-to-many
 #> x: 1000 rows, unique
 #> y: 5432 rows, 4432 duplicates
 
-# Join with cardinality check
-user_orders <- left_join_checked(
-  users,
-  orders,
-  by = c("user_id" = "customer_id"),
-  expect = "one-to-many",
-  coverage = 0.8
-)
-#> Warning: Coverage assumption violated.
-#> Expected: >= 80%, Actual: 72.3%
+# For validated joins with cardinality enforcement, use joinspy
+# joinspy::left_join_spy(), joinspy::join_strict(), etc.
 
 # ─── 4. Key survives transformations ─────────────────────────────────────────
 

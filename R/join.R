@@ -1,291 +1,9 @@
-# Checked Joins ----------------------------------------------------------------
+# Join Diagnostics -------------------------------------------------------------
 #
-# Wrappers around dplyr joins that validate expected cardinality and coverage.
-# Fail or warn at the operation boundary, not globally.
-#
-# Optionally integrates with joinspy for enhanced diagnostics when available.
+# Pre-join diagnostics to understand cardinality before executing.
+# For validated joins with cardinality enforcement, use joinspy.
 
-#' Left join with validation
-#'
-#' Performs a left join with optional cardinality and coverage checks.
-#'
-#' @param x Left data frame.
-#' @param y Right data frame.
-#' @param by Join specification (passed to dplyr).
-#' @param expect Expected cardinality: "one-to-one", "one-to-many",
-#'   "many-to-one", or NULL (no check).
-#' @param coverage Minimum fraction of x keys that must match y (0 to 1).
-#' @param .strict If TRUE, error on violations. If FALSE (default), warn.
-#' @param ... Additional arguments passed to [dplyr::left_join()].
-#'
-#' @return Result of the left join.
-#'
-#' @examples
-#' users <- data.frame(id = 1:3, name = c("A", "B", "C"))
-#' orders <- data.frame(user_id = c(1, 1, 2), amount = c(100, 200, 150))
-#'
-#' # Check one-to-many relationship
-#' left_join_checked(users, orders, by = c("id" = "user_id"), expect = "one-to-many")
-#'
-#' # Check coverage
-#' left_join_checked(users, orders, by = c("id" = "user_id"), coverage = 0.5)
-#'
-#' @export
-left_join_checked <- function(x, y, by = NULL, expect = NULL, coverage = NULL,
-                               .strict = FALSE, ...) {
-  # Pre-join validation
-  if (!is.null(expect)) {
-    validate_cardinality_pre(x, y, by, expect, .strict = .strict)
-  }
-
-  # Perform the join
-  result <- dplyr::left_join(x, y, by = by, ...)
-
-  # Post-join validation
-  if (!is.null(expect)) {
-    validate_cardinality_post(x, result, expect, .strict = .strict)
-  }
-
-  if (!is.null(coverage)) {
-    validate_coverage(x, y, result, by, coverage, .strict = .strict)
-  }
-
-  result
-}
-
-#' Inner join with validation
-#'
-#' Performs an inner join with optional cardinality and coverage checks.
-#'
-#' @inheritParams left_join_checked
-#'
-#' @return Result of the inner join.
-#'
-#' @examples
-#' users <- data.frame(id = 1:3, name = c("A", "B", "C"))
-#' orders <- data.frame(user_id = c(1, 2), amount = c(100, 150))
-#'
-#' inner_join_checked(users, orders, by = c("id" = "user_id"), expect = "one-to-one")
-#'
-#' @export
-inner_join_checked <- function(x, y, by = NULL, expect = NULL, coverage = NULL,
-                                .strict = FALSE, ...) {
-  if (!is.null(expect)) {
-    validate_cardinality_pre(x, y, by, expect, .strict = .strict)
-  }
-
-  result <- dplyr::inner_join(x, y, by = by, ...)
-
-  if (!is.null(expect)) {
-    validate_cardinality_post(x, result, expect, .strict = .strict)
-  }
-
-  if (!is.null(coverage)) {
-    validate_coverage(x, y, result, by, coverage, .strict = .strict)
-  }
-
-  result
-}
-
-#' Right join with validation
-#'
-#' Performs a right join with optional cardinality and coverage checks.
-#'
-#' @inheritParams left_join_checked
-#'
-#' @return Result of the right join.
-#'
-#' @export
-right_join_checked <- function(x, y, by = NULL, expect = NULL, coverage = NULL,
-                                .strict = FALSE, ...) {
-  if (!is.null(expect)) {
-    validate_cardinality_pre(x, y, by, expect, .strict = .strict)
-  }
-
-  result <- dplyr::right_join(x, y, by = by, ...)
-
-  if (!is.null(expect)) {
-    # For right join, we check y's rows
-    validate_cardinality_post(y, result, expect, .strict = .strict)
-  }
-
-  if (!is.null(coverage)) {
-    validate_coverage(x, y, result, by, coverage, .strict = .strict)
-  }
-
-  result
-}
-
-#' Full join with validation
-#'
-#' Performs a full join with optional cardinality and coverage checks.
-#'
-#' @inheritParams left_join_checked
-#'
-#' @return Result of the full join.
-#'
-#' @export
-full_join_checked <- function(x, y, by = NULL, expect = NULL, coverage = NULL,
-                               .strict = FALSE, ...) {
-  if (!is.null(expect)) {
-    validate_cardinality_pre(x, y, by, expect, .strict = .strict)
-  }
-
-  result <- dplyr::full_join(x, y, by = by, ...)
-
-  if (!is.null(coverage)) {
-    validate_coverage(x, y, result, by, coverage, .strict = .strict)
-  }
-
-  result
-}
-
-
-# Validation helpers -----------------------------------------------------------
-
-#' Validate cardinality before join
-#' @noRd
-validate_cardinality_pre <- function(x, y, by, expect, .strict = FALSE) {
-  expect <- match.arg(expect, c("one-to-one", "one-to-many", "many-to-one"))
-
-  # Normalize by specification
-  by_spec <- normalize_by(by, x, y)
-  x_cols <- by_spec$x
-  y_cols <- by_spec$y
-
-  # Check uniqueness based on expected cardinality
-  x_unique <- is_unique_on(x, x_cols)
-  y_unique <- is_unique_on(y, y_cols)
-
-  violations <- character()
-
-  if (expect == "one-to-one") {
-    if (!x_unique) violations <- c(violations, "x is not unique on join columns")
-    if (!y_unique) violations <- c(violations, "y is not unique on join columns")
-  } else if (expect == "one-to-many") {
-    if (!x_unique) violations <- c(violations, "x is not unique on join columns (expected one-to-many)")
-  } else if (expect == "many-to-one") {
-    if (!y_unique) violations <- c(violations, "y is not unique on join columns (expected many-to-one)")
-  }
-
-  if (length(violations) > 0) {
-    msg <- c(
-      paste0("Cardinality assumption violated (expected: ", expect, ")."),
-      i = violations
-    )
-    if (.strict) {
-      abort(msg, class = "keyed_join_error")
-    } else {
-      warn(msg, class = "keyed_join_warning")
-    }
-  }
-}
-
-#' Validate cardinality after join (check for explosion)
-#' @noRd
-validate_cardinality_post <- function(original, result, expect, .strict = FALSE) {
-  n_original <- nrow(original)
-  n_result <- nrow(result)
-
-  if (expect == "one-to-one" && n_result != n_original) {
-    msg <- c(
-      "Join explosion detected (expected one-to-one).",
-      i = paste0("Original rows: ", n_original, ", Result rows: ", n_result)
-    )
-    if (.strict) {
-      abort(msg, class = "keyed_join_error")
-    } else {
-      warn(msg, class = "keyed_join_warning")
-    }
-  }
-}
-
-#' Validate coverage after join
-#' @noRd
-validate_coverage <- function(x, y, result, by, threshold, .strict = FALSE) {
-  if (!is.numeric(threshold) || length(threshold) != 1 ||
-      threshold < 0 || threshold > 1) {
-    abort("`coverage` must be a single number between 0 and 1.")
-  }
-
-  # Normalize by specification
-  by_spec <- normalize_by(by, x, y)
-  x_cols <- by_spec$x
-
-  # Count how many x keys have matching y values
-  n_x <- nrow(x)
-  if (n_x == 0) return(invisible(NULL))
-
-  # For left join, check how many result rows have non-NA y columns
-  # Simpler: count unique x keys that got a match
-  y_only_cols <- setdiff(names(y), by_spec$y)
-  if (length(y_only_cols) == 0) {
-    # No columns to check coverage on
-    return(invisible(NULL))
-  }
-
-  # Check first y-only column for NA (indicates no match)
-  check_col <- y_only_cols[1]
-  if (check_col %in% names(result)) {
-    n_matched <- sum(!is.na(result[[check_col]]))
-    actual_coverage <- n_matched / n_x
-  } else {
-    # Can't determine coverage
-    return(invisible(NULL))
-  }
-
-  if (actual_coverage < threshold) {
-    msg <- c(
-      paste0("Coverage assumption violated."),
-      i = paste0("Expected: >= ", threshold * 100, "%, Actual: ",
-                 sprintf("%.1f%%", actual_coverage * 100))
-    )
-    if (.strict) {
-      abort(msg, class = "keyed_join_error")
-    } else {
-      warn(msg, class = "keyed_join_warning")
-    }
-  }
-}
-
-#' Check if data frame is unique on specified columns
-#' @noRd
-is_unique_on <- function(df, cols) {
-  if (length(cols) == 0) return(TRUE)
-  if (nrow(df) == 0) return(TRUE)
-
-  vals <- df[cols]
-  vctrs::vec_unique_count(vals) == nrow(df)
-}
-
-#' Normalize join 'by' specification
-#' @noRd
-normalize_by <- function(by, x, y) {
-  if (is.null(by)) {
-    # Natural join - find common columns
-    common <- intersect(names(x), names(y))
-    return(list(x = common, y = common))
-  }
-
-  if (is.character(by)) {
-    if (is.null(names(by))) {
-      # Simple character vector
-      return(list(x = by, y = by))
-    } else {
-      # Named vector: c("x_col" = "y_col")
-      return(list(x = names(by), y = unname(by)))
-    }
-  }
-
-  # join_by() expressions - just use common approach for now
-  common <- intersect(names(x), names(y))
-  list(x = common, y = common)
-}
-
-
-# Detect join explosions -------------------------------------------------------
-
-#' Check for potential join explosion before executing
+#' Diagnose a join before executing
 #'
 #' Analyzes join cardinality without performing the full join.
 #' Useful for detecting many-to-many joins that would explode row count.
@@ -313,7 +31,7 @@ normalize_by <- function(by, x, y) {
 #' @export
 diagnose_join <- function(x, y, by = NULL, use_joinspy = TRUE) {
   # Use joinspy if available and requested
- if (use_joinspy && has_joinspy()) {
+  if (use_joinspy && has_joinspy()) {
     return(joinspy::join_spy(x, y, by = by))
   }
 
@@ -365,6 +83,43 @@ print.keyed_join_diagnosis <- function(x, ...) {
     cli::cli_alert_warning("Many-to-many join may produce up to {x$max_result_rows} rows")
   }
   invisible(x)
+}
+
+
+# Helpers ----------------------------------------------------------------------
+
+#' Check if data frame is unique on specified columns
+#' @noRd
+is_unique_on <- function(df, cols) {
+  if (length(cols) == 0) return(TRUE)
+  if (nrow(df) == 0) return(TRUE)
+
+  vals <- df[cols]
+  vctrs::vec_unique_count(vals) == nrow(df)
+}
+
+#' Normalize join 'by' specification
+#' @noRd
+normalize_by <- function(by, x, y) {
+  if (is.null(by)) {
+    # Natural join - find common columns
+    common <- intersect(names(x), names(y))
+    return(list(x = common, y = common))
+  }
+
+  if (is.character(by)) {
+    if (is.null(names(by))) {
+      # Simple character vector
+      return(list(x = by, y = by))
+    } else {
+      # Named vector: c("x_col" = "y_col")
+      return(list(x = names(by), y = unname(by)))
+    }
+  }
+
+  # join_by() expressions - just use common approach for now
+  common <- intersect(names(x), names(y))
+  list(x = common, y = common)
 }
 
 #' Count duplicate key values

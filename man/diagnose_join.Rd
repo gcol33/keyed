@@ -2,7 +2,7 @@
 % Please edit documentation in R/join.R
 \name{diagnose_join}
 \alias{diagnose_join}
-\title{Check for potential join explosion before executing}
+\title{Diagnose a join before executing}
 \usage{
 diagnose_join(x, y, by = NULL, use_joinspy = TRUE)
 }
