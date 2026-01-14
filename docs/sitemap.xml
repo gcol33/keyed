@@ -1,7 +1,8 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://gcol33.github.io/keyed/404.html</loc></url>
-<url><loc>https://gcol33.github.io/keyed/articles/getting-started.html</loc></url>
 <url><loc>https://gcol33.github.io/keyed/articles/index.html</loc></url>
+<url><loc>https://gcol33.github.io/keyed/articles/philosophy.html</loc></url>
+<url><loc>https://gcol33.github.io/keyed/articles/quickstart.html</loc></url>
 <url><loc>https://gcol33.github.io/keyed/authors.html</loc></url>
 <url><loc>https://gcol33.github.io/keyed/index.html</loc></url>
 <url><loc>https://gcol33.github.io/keyed/LICENSE-text.html</loc></url>
@@ -14,6 +15,7 @@
 <url><loc>https://gcol33.github.io/keyed/reference/assume_nrow.html</loc></url>
 <url><loc>https://gcol33.github.io/keyed/reference/assume_unique.html</loc></url>
 <url><loc>https://gcol33.github.io/keyed/reference/bind_id.html</loc></url>
+<url><loc>https://gcol33.github.io/keyed/reference/bind_keyed.html</loc></url>
 <url><loc>https://gcol33.github.io/keyed/reference/bind_rows_keyed.html</loc></url>
 <url><loc>https://gcol33.github.io/keyed/reference/check_drift.html</loc></url>
 <url><loc>https://gcol33.github.io/keyed/reference/check_id.html</loc></url>

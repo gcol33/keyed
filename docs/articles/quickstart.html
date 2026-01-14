@@ -5,13 +5,13 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Getting Started with keyed • keyed</title>
+<title>Quick Start • keyed</title>
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="Getting Started with keyed">
+<meta property="og:title" content="Quick Start">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -30,12 +30,13 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="active nav-item"><a class="nav-link" href="../articles/getting-started.html">Get Started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../articles/quickstart.html">Get Started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started</a></li>
+<li><a class="dropdown-item" href="../articles/quickstart.html">Quick Start</a></li>
+    <li><a class="dropdown-item" href="../articles/philosophy.html">Design Philosophy</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -66,14 +67,14 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Getting Started with keyed</h1>
+      <h1>Quick Start</h1>
                         <h4 data-toc-skip class="author">Gilles
 Colling</h4>
             
             <h4 data-toc-skip class="date">2026-01-14</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/gcol33/keyed/blob/HEAD/vignettes/getting-started.Rmd" class="external-link"><code>vignettes/getting-started.Rmd</code></a></small>
-      <div class="d-none name"><code>getting-started.Rmd</code></div>
+      <small class="dont-index">Source: <a href="https://github.com/gcol33/keyed/blob/HEAD/vignettes/quickstart.Rmd" class="external-link"><code>vignettes/quickstart.Rmd</code></a></small>
+      <div class="d-none name"><code>quickstart.Rmd</code></div>
     </div>
 
     
@@ -217,12 +218,7 @@ etc.)</li>
 <span>  amount <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">150</span>, <span class="fl">200</span>, <span class="fl">50</span>, <span class="fl">75</span>, <span class="fl">125</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/diagnose_join.html">diagnose_join</a></span><span class="op">(</span><span class="va">users</span>, <span class="va">orders</span>, by <span class="op">=</span> <span class="st">"user_id"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── Join Diagnosis</span></span>
-<span><span class="co">#&gt; Cardinality: <span style="font-weight: bold;">one-to-many</span></span></span>
-<span><span class="co">#&gt; x: 5 rows, unique</span></span>
-<span><span class="co">#&gt; y: 6 rows, 3 duplicates</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/diagnose_join.html">diagnose_join</a></span><span class="op">(</span><span class="va">users</span>, <span class="va">orders</span>, by <span class="op">=</span> <span class="st">"user_id"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="row-identity-tracking">Row Identity Tracking<a class="anchor" aria-label="anchor" href="#row-identity-tracking"></a>
@@ -234,13 +230,13 @@ etc.)</li>
 <span><span class="va">users_tracked</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A keyed tibble: 5 x 4</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Key:            user_id | .id</span></span></span>
-<span><span class="co">#&gt;   .id              user_id name  email            </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> a63e19a36d2f4e0f       1 Alice alice@example.com</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 6eb5ec3eb8e1c12e       2 Bob   bob@example.com  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> e801ece25c41ffd3       3 Carol carol@example.com</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> e40c0c236889ec14       4 Dave  dave@example.com </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 3807bee3a6c9bb3a       5 Eve   eve@example.com</span></span>
+<span><span class="co">#&gt;   .id                                  user_id name  email            </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 95a12380-48f9-4911-8d06-06fc4289dab8       1 Alice alice@example.com</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> d76f353c-a389-407d-9dfc-84f569a8991f       2 Bob   bob@example.com  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> c78ff452-af48-4062-8e04-44fc40d27235       3 Carol carol@example.com</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 6ca05a5d-e9a4-4668-b611-767e9b4b2c19       4 Dave  dave@example.com </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 59a6cfa6-2b78-4a9b-ada4-852f618b74bd       5 Eve   eve@example.com</span></span>
 <span></span>
 <span><span class="co"># Check ID status</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">users_tracked</span><span class="op">)</span></span>
@@ -268,13 +264,13 @@ properly:</p>
 <span><span class="co"># Combine - checks for overlaps and fills missing IDs</span></span>
 <span><span class="va">combined</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bind_id.html">bind_id</a></span><span class="op">(</span><span class="va">batch1</span>, <span class="va">batch2</span><span class="op">)</span></span>
 <span><span class="va">combined</span></span>
-<span><span class="co">#&gt;                .id x</span></span>
-<span><span class="co">#&gt; 1 894991fa11cb7a51 1</span></span>
-<span><span class="co">#&gt; 2 90bb960bd0fba1c7 2</span></span>
-<span><span class="co">#&gt; 3 d25b1c34be34400a 3</span></span>
-<span><span class="co">#&gt; 4 93e9f05a7e95cba8 4</span></span>
-<span><span class="co">#&gt; 5 6f1c3cb228cffb81 5</span></span>
-<span><span class="co">#&gt; 6 f0da2010158942fe 6</span></span></code></pre></div>
+<span><span class="co">#&gt;                                    .id x</span></span>
+<span><span class="co">#&gt; 1 55926c8e-9795-4842-ae45-21153736ebd9 1</span></span>
+<span><span class="co">#&gt; 2 8eb39eba-3087-4d60-8a23-a3eaadfff18c 2</span></span>
+<span><span class="co">#&gt; 3 d889d9b9-c9c8-4cfc-9024-f8f2046a7e18 3</span></span>
+<span><span class="co">#&gt; 4 ef303a00-7ffa-4dbe-9dee-2e340c60ee78 4</span></span>
+<span><span class="co">#&gt; 5 8d6a7777-c1c2-42a4-bc02-caab63031fd5 5</span></span>
+<span><span class="co">#&gt; 6 13e50c5b-82c9-4373-8edd-623ea3eedf21 6</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="composite-ids-from-columns">Composite IDs from Columns<a class="anchor" aria-label="anchor" href="#composite-ids-from-columns"></a>
@@ -309,7 +305,7 @@ properly:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Drift Report</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> No drift detected</span></span>
-<span><span class="co">#&gt; Snapshot: c2930fbe... (2026-01-14 10:57)</span></span>
+<span><span class="co">#&gt; Snapshot: c2930fbe... (2026-01-14 11:32)</span></span>
 <span></span>
 <span><span class="co"># Clean up</span></span>
 <span><span class="fu"><a href="../reference/clear_all_snapshots.html">clear_all_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -320,10 +316,8 @@ properly:</p>
 <h2 id="whats-next">What’s Next<a class="anchor" aria-label="anchor" href="#whats-next"></a>
 </h2>
 <ul>
-<li>See <a href="row-identity.html">Row Identity</a> for detailed ID
-tracking</li>
-<li>See <a href="drift-detection.html">Drift Detection</a> for snapshot
-workflows</li>
+<li>See <a href="philosophy.html">Design Philosophy</a> for the
+reasoning behind keyed</li>
 <li>See <a href="https://github.com/gcol33/joinspy" class="external-link">joinspy</a> for
 enhanced join diagnostics</li>
 </ul>

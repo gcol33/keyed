@@ -1,0 +1,143 @@
+---
+title: "Design Philosophy"
+author: "Gilles Colling"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Design Philosophy}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Who This Package Is For
+
+keyed targets **flat-file workflows** where you typically have:
+
+- No version control
+- No database
+- No schema
+- Multiple drifting CSV copies
+
+This describes most data analysis in practice: exports from systems, shared spreadsheets, periodic dumps. The data lives in files, not tables with enforced constraints.
+
+## The Problem
+
+Flat-file workflows rely on implicit assumptions:
+
+- "This column is unique"
+- "These two columns together form a key"
+- "There shouldn't be NAs here"
+- "This join should be one-to-one"
+
+These assumptions live in your head, in scattered comments, or nowhere at all. When data changes upstream, assumptions break silently. You discover the problem downstream—wrong row counts after a join, duplicated records, missing values where you expected none.
+
+## The Approach
+
+keyed makes assumptions explicit by attaching keys to data and **warning when those assumptions stop being true**.
+
+The core philosophy is **detection, not enforcement**:
+
+- Keys are defined once and validated at creation
+- Violations produce warnings, not errors (by default
+- Checks happen at boundaries (joins, exports, commits), not on every operation
+- Metadata survives transformations when possible, degrades gracefully when not
+
+This differs from database thinking. Databases enforce constraints globally and reject invalid states. keyed operates in a world where:
+
+- Data arrives pre-corrupted
+- Transformations happen outside your control
+- R's copy semantics mean attributes can vanish
+- Session boundaries reset everything
+
+Rather than fighting this, keyed accepts it. The goal is catching problems early, not preventing them absolutely.
+
+## What keyed Is Not
+
+keyed deliberately avoids:
+
+- **Transactions**: No rollback, no atomic operations
+- **Version history**: No branches, no diffs over time
+- **Database semantics**: No foreign key enforcement, no cascading updates
+- **Global invariants**: No system-wide state that must stay consistent
+- **Required infrastructure**: No sidecar files, no databases, no services
+
+These are non-goals, not missing features. Each would require infrastructure that contradicts the flat-file context keyed targets.
+
+## Boundary Checks
+
+Checks run at meaningful boundaries:
+
+| Check at | Examples |
+|----------|----------|
+| Key creation | `key()` validates uniqueness |
+| Joins | `diagnose_join()` reports cardinality |
+| Snapshots | `commit_keyed()` and `check_drift()` |
+| Explicit assertions | `assume_unique()`, `assume_no_na()` |
+
+Checks do **not** run on:
+
+- `mutate()`, `select()`, `filter()`
+- `print()` or casual inspection
+- Every row access
+
+This keeps the package lightweight. You opt into validation where it matters.
+
+## Graceful Degradation
+
+Key metadata travels with the data through dplyr operations:
+
+```{r}
+library(keyed)
+library(dplyr)
+
+df <- data.frame(id = 1:3, x = c("a", "b", "c"))
+df <- key(df, id)
+
+# Key survives filtering
+df |> filter(id > 1) |> has_key()
+
+# Key survives mutation
+df |> mutate(y = toupper(x)) |> has_key()
+```
+
+But if an operation breaks uniqueness, the key is dropped with a warning rather than an error:
+
+```{r}
+# Creates duplicates - key dropped
+df |> mutate(id = 1)
+```
+
+This reflects reality: sometimes transformations legitimately break keys. keyed tells you when this happens rather than blocking the operation.
+
+## When to Use Something Else
+
+keyed is the wrong tool if you need:
+
+| Need | Better alternative |
+|------|-------------------|
+| Enforced schema | Database (SQLite, DuckDB) |
+| Version history | Git, git2r |
+| Type safety | vctrs, typed data frames |
+| Full data validation | pointblank, validate |
+| Production pipelines | targets, drake |
+
+keyed fills a specific gap: lightweight key tracking for exploratory and semi-structured workflows where heavier tools add friction.
+
+## Summary
+
+keyed helps you:
+
+1. Define keys explicitly with `key()`
+2. Check assumptions with `assume_*()` functions
+3. Diagnose joins before running them
+4. Track row identity with `add_id()`
+5. Detect drift with `commit_keyed()` and `check_drift()`
+
+The package warns when assumptions break. It doesn't enforce correctness or provide versioning. This constraint is intentional—it keeps the package simple and appropriate for its target context.

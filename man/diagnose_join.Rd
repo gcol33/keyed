@@ -32,7 +32,7 @@ detection, encoding issues, and detailed match analysis.
 \examples{
 x <- data.frame(id = c(1, 1, 2), a = 1:3)
 y <- data.frame(id = c(1, 1, 2), b = 4:6)
-diagnose_join(x, y, by = "id")
+diagnose_join(x, y, by = "id", use_joinspy = FALSE)
 
 }
 \seealso{

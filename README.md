@@ -186,7 +186,7 @@ diagnose_join(users, orders, by = "user_id")
 
 ## Documentation
 
-- [Getting Started](https://gcol33.github.io/keyed/articles/getting-started.html)
+- [Quick Start](https://gcol33.github.io/keyed/articles/quickstart.html)
 - [Function Reference](https://gcol33.github.io/keyed/reference/index.html)
 
 ## Support

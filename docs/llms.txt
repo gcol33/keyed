@@ -209,8 +209,7 @@ diagnose_join(users, orders, by = "user_id")
 
 ## Documentation
 
-- [Getting
-  Started](https://gcol33.github.io/keyed/articles/getting-started.html)
+- [Quick Start](https://gcol33.github.io/keyed/articles/quickstart.html)
 - [Function
   Reference](https://gcol33.github.io/keyed/reference/index.html)
 
@@ -243,7 +242,7 @@ Define and manage keys
   : Get key column names
 - [`key_is_valid()`](https://gcol33.github.io/keyed/reference/key_is_valid.md)
   : Check if the key is still valid
-- [`bind_rows_keyed()`](https://gcol33.github.io/keyed/reference/bind_rows_keyed.md)
+- [`bind_keyed()`](https://gcol33.github.io/keyed/reference/bind_keyed.md)
   : Bind rows of keyed data frames
 
 ## Assumption Checks
@@ -327,5 +326,6 @@ Inspect and compare data
 
 ### Getting Started
 
-- [Getting Started with
-  keyed](https://gcol33.github.io/keyed/articles/getting-started.md):
+- [Quick Start](https://gcol33.github.io/keyed/articles/quickstart.md):
+- [Design
+  Philosophy](https://gcol33.github.io/keyed/articles/philosophy.md):

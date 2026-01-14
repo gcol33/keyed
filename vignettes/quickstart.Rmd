@@ -1,10 +1,10 @@
 ---
-title: "Getting Started with keyed"
+title: "Quick Start"
 author: "Gilles Colling"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting Started with keyed}
+  %\VignetteIndexEntry{Quick Start}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -114,8 +114,7 @@ assume_nrow(users, min = 1, max = 100)
 ## Join Diagnostics
 
 Before joining, diagnose the cardinality:
-
-```{r}
+```{r eval=FALSE}
 orders <- data.frame(
   order_id = 1:6,
   user_id = c(1, 1, 2, 3, 3, 3),
@@ -186,6 +185,5 @@ clear_all_snapshots()
 
 ## What's Next
 
-- See [Row Identity](row-identity.html) for detailed ID tracking
-- See [Drift Detection](drift-detection.html) for snapshot workflows
+- See [Design Philosophy](philosophy.html) for the reasoning behind keyed
 - See [joinspy](https://github.com/gcol33/joinspy) for enhanced join diagnostics

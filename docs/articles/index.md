@@ -2,5 +2,6 @@
 
 ### Getting Started
 
-- [Getting Started with
-  keyed](https://gcol33.github.io/keyed/articles/getting-started.md):
+- [Quick Start](https://gcol33.github.io/keyed/articles/quickstart.md):
+- [Design
+  Philosophy](https://gcol33.github.io/keyed/articles/philosophy.md):

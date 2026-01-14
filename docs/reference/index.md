@@ -15,7 +15,7 @@ Define and manage keys
   : Get key column names
 - [`key_is_valid()`](https://gcol33.github.io/keyed/reference/key_is_valid.md)
   : Check if the key is still valid
-- [`bind_rows_keyed()`](https://gcol33.github.io/keyed/reference/bind_rows_keyed.md)
+- [`bind_keyed()`](https://gcol33.github.io/keyed/reference/bind_keyed.md)
   : Bind rows of keyed data frames
 
 ## Assumption Checks
