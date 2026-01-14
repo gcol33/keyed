@@ -141,6 +141,104 @@ compare_ids <- function(before, after, .id = ".id") {
 }
 
 
+#' Extend IDs to new rows
+#'
+#' Adds IDs to rows where the ID column is NA, preserving existing IDs.
+#' Useful after binding new data to an existing dataset with IDs.
+#'
+#' @param .data A data frame with an ID column (possibly with NAs).
+#' @param .id Column name for IDs (default: ".id").
+#'
+#' @return Data frame with IDs filled in for NA rows.
+#'
+#' @examples
+#' # Original data with IDs
+#' old <- add_id(data.frame(x = 1:3))
+#'
+#' # New data without IDs
+#' new <- data.frame(.id = NA_character_, x = 4:5)
+#'
+#' # Combine and extend
+#' combined <- dplyr::bind_rows(old, new)
+#' extend_id(combined)
+#'
+#' @export
+extend_id <- function(.data, .id = ".id") {
+  if (!.id %in% names(.data)) {
+    abort(c(
+      paste0("Column '", .id, "' not found."),
+      i = "Use add_id() to create a new ID column."
+    ))
+  }
+
+  # Find rows with NA IDs
+  na_rows <- is.na(.data[[.id]])
+  n_na <- sum(na_rows)
+
+  if (n_na == 0) {
+    return(.data)
+  }
+
+  # Generate new IDs for NA rows
+  new_ids <- generate_ids(n_na)
+  .data[[.id]][na_rows] <- new_ids
+
+  .data
+}
+
+#' Create ID from columns
+#'
+#' Creates an ID column by combining values from one or more columns.
+#' Unlike [add_id()], this produces deterministic IDs based on column values.
+#'
+#' @param .data A data frame.
+#' @param ... Columns to combine into the ID.
+#' @param .id Column name for the ID (default: ".id").
+#' @param .sep Separator between column values (default: "|").
+#'
+#' @return Data frame with ID column added.
+#'
+#' @examples
+#' df <- data.frame(country = c("US", "UK", "US"), year = c(2020, 2020, 2021))
+#' make_id(df, country, year)
+#' #>   .id       country year
+#' #> 1 US|2020  US      2020
+#' #> 2 UK|2020  UK      2020
+#' #> 3 US|2021  US      2021
+#'
+#' @export
+make_id <- function(.data, ..., .id = ".id", .sep = "|") {
+  cols <- key_cols_from_dots(.data, ...)
+
+  if (length(cols) == 0) {
+    abort("At least one column must be specified.")
+  }
+
+  missing <- setdiff(cols, names(.data))
+  if (length(missing) > 0) {
+    abort(c(
+      "Column(s) not found:",
+      paste0("- ", missing)
+    ))
+  }
+
+  if (.id %in% names(.data)) {
+    abort(c(
+      paste0("Column '", .id, "' already exists."),
+      i = "Use a different name or remove the existing column."
+    ))
+  }
+
+  # Combine column values
+  id_values <- do.call(paste, c(.data[cols], sep = .sep))
+
+  # Add column at the front
+  .data <- tibble::add_column(.data, !!.id := id_values, .before = 1)
+
+  .data
+}
+
+
 # Helpers ----------------------------------------------------------------------
 
 #' Generate unique IDs
