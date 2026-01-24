@@ -16,14 +16,14 @@
 #'
 #' @examples
 #' df <- data.frame(id = 1:3, x = c("a", "b", "c"))
-#' assume_unique(df, id)
+#' lock_unique(df, id)
 #'
 #' # Fails with warning
 #' df2 <- data.frame(id = c(1, 1, 2), x = c("a", "b", "c"))
-#' assume_unique(df2, id)
+#' lock_unique(df2, id)
 #'
 #' @export
-assume_unique <- function(.data, ..., .strict = FALSE) {
+lock_unique <- function(.data, ..., .strict = FALSE) {
   cols <- key_cols_from_dots(.data, ...)
 
   if (length(cols) == 0) {
@@ -71,11 +71,11 @@ assume_unique <- function(.data, ..., .strict = FALSE) {
 #'
 #' @examples
 #' df <- data.frame(id = 1:3, x = c("a", NA, "c"))
-#' assume_no_na(df, id)
-#' assume_no_na(df, x)  # warns
+#' lock_no_na(df, id)
+#' lock_no_na(df, x)  # warns
 #'
 #' @export
-assume_no_na <- function(.data, ..., .strict = FALSE) {
+lock_no_na <- function(.data, ..., .strict = FALSE) {
   cols <- key_cols_from_dots(.data, ...)
 
   if (length(cols) == 0) {
@@ -128,8 +128,8 @@ assume_no_na <- function(.data, ..., .strict = FALSE) {
 #' @return Invisibly returns `.data` (for piping).
 #'
 #' @export
-assume_complete <- function(.data, .strict = FALSE) {
-  assume_no_na(.data, .strict = .strict)
+lock_complete <- function(.data, .strict = FALSE) {
+  lock_no_na(.data, .strict = .strict)
 }
 
 #' Assert minimum coverage of values
@@ -146,11 +146,11 @@ assume_complete <- function(.data, .strict = FALSE) {
 #'
 #' @examples
 #' df <- data.frame(id = 1:10, x = c(1:8, NA, NA))
-#' assume_coverage(df, 0.8, x)
-#' assume_coverage(df, 0.9, x)  # warns (only 80% coverage)
+#' lock_coverage(df, 0.8, x)
+#' lock_coverage(df, 0.9, x)  # warns (only 80% coverage)
 #'
 #' @export
-assume_coverage <- function(.data, threshold, ..., .strict = FALSE) {
+lock_coverage <- function(.data, threshold, ..., .strict = FALSE) {
   if (!is.numeric(threshold) || length(threshold) != 1 ||
       threshold < 0 || threshold > 1) {
     abort("`threshold` must be a single number between 0 and 1.")
@@ -223,11 +223,11 @@ assume_coverage <- function(.data, threshold, ..., .strict = FALSE) {
 #'
 #' @examples
 #' df <- data.frame(id = 1:100)
-#' assume_nrow(df, min = 50, max = 200)
-#' assume_nrow(df, expected = 100)
+#' lock_nrow(df, min = 50, max = 200)
+#' lock_nrow(df, expected = 100)
 #'
 #' @export
-assume_nrow <- function(.data, min = 1, max = Inf, expected = NULL, .strict = FALSE) {
+lock_nrow <- function(.data, min = 1, max = Inf, expected = NULL, .strict = FALSE) {
  n <- nrow(.data)
 
   if (!is.null(expected)) {

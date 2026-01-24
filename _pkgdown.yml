@@ -52,11 +52,11 @@ reference:
 - title: Assumption Checks
   desc: Validate data assumptions
   contents:
-  - assume_unique
-  - assume_no_na
-  - assume_complete
-  - assume_coverage
-  - assume_nrow
+  - lock_unique
+  - lock_no_na
+  - lock_complete
+  - lock_coverage
+  - lock_nrow
 - title: Join Diagnostics
   desc: Analyze joins before executing
   contents: diagnose_join

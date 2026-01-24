@@ -18,11 +18,11 @@
 
 ### Assumption Checks
 
-* `assume_unique()`: Verify column uniqueness
-* `assume_no_na()`: Check for missing values
-* `assume_complete()`: Ensure expected values are present
-* `assume_coverage()`: Validate reference coverage
-* `assume_nrow()`: Check row count bounds
+* `lock_unique()`: Verify column uniqueness
+* `lock_no_na()`: Check for missing values
+* `lock_complete()`: Ensure expected values are present
+* `lock_coverage()`: Validate reference coverage
+* `lock_nrow()`: Check row count bounds
 
 ### Join Diagnostics
 

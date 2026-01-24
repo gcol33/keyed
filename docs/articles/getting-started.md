@@ -13,8 +13,8 @@ when assumptions break.
   composite columns
 - Keys survive dplyr transformations (filter, mutate, arrange, etc.)
 - Assumption checks with
-  [`assume_unique()`](https://gcol33.github.io/keyed/reference/assume_unique.md),
-  [`assume_no_na()`](https://gcol33.github.io/keyed/reference/assume_no_na.md),
+  [`lock_unique()`](https://gcol33.github.io/keyed/reference/lock_unique.md),
+  [`lock_no_na()`](https://gcol33.github.io/keyed/reference/lock_no_na.md),
   etc.
 - Join diagnostics with
   [`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md)
@@ -131,13 +131,13 @@ Validate assumptions at key points in your workflow:
 ``` r
 
 # Check uniqueness
-assume_unique(users, user_id)
+lock_unique(users, user_id)
 
 # Check for missing values
-assume_no_na(users, email)
+lock_no_na(users, email)
 
 # Check row count expectations
-assume_nrow(users, min = 1, max = 100)
+lock_nrow(users, min = 1, max = 100)
 ```
 
 ## Join Diagnostics

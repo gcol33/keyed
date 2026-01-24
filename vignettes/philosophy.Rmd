@@ -81,7 +81,7 @@ df_filtered <- df |> filter(id > 1)
 df_enriched <- df |> mutate(upper = toupper(value))
 
 # Check happens HERE - at explicit assertion
-df |> assume_no_na(value)
+df |> lock_no_na(value)
 ```
 
 This keeps the package lightweight. You opt into validation where it matters:
@@ -89,7 +89,7 @@ This keeps the package lightweight. You opt into validation where it matters:
 | Boundary | Example |
 |----------|---------|
 | Key definition | `key()` validates uniqueness |
-| Explicit assertions | `assume_unique()`, `assume_no_na()` |
+| Explicit assertions | `lock_unique()`, `lock_no_na()` |
 | Before joins | `diagnose_join()` |
 | Drift checks | `commit_keyed()` → `check_drift()` |
 
@@ -114,13 +114,13 @@ Why warn instead of error?
 
 3. **Pipelines don't halt unexpectedly** — You control when to enforce strictly
 
-For strict enforcement, use `assume_*()` functions which do error:
+For strict enforcement, use `lock_*()` functions which do error:
 
 ```{r error=TRUE}
 # This WILL error
 df |>
   mutate(id = 1) |>
-  assume_unique(id)
+  lock_unique(id)
 ```
 
 ## What keyed Doesn't Do
@@ -143,7 +143,7 @@ keyed helps you:
 
 1. **Define keys explicitly** — `key(df, col1, col2)`
 
-2. **Check assumptions at boundaries** — `assume_unique()`, `assume_no_na()`
+2. **Check assumptions at boundaries** — `lock_unique()`, `lock_no_na()`
 
 3. **Diagnose joins before problems occur** — `diagnose_join()`
 

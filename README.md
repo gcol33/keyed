@@ -8,23 +8,52 @@
 
 Attach keys to data frames, validate uniqueness at creation, and get warnings when transformations break your assumptions. Designed for CSV-first workflows without databases.
 
-## Quick Start
+## The Problem
+
+You get monthly CSV or Excel exports. The `customer_id` column should be unique - but one month, someone upstream changes the export logic:
+
+```r
+# Your monthly data pipeline
+customers <- read.csv("customers_march.csv")
+# or: customers <- readxl::read_excel("customers_march.xlsx")
+
+# Looks fine...
+nrow(customers)
+#> [1] 150
+
+# But customer_id has duplicates you didn't notice
+sum(duplicated(customers$customer_id))
+#> [1] 12
+```
+
+You won't discover this until something breaks downstream - wrong totals, duplicate invoices, a failed join. By then, the damage is done.
+
+## The Solution
 
 ```r
 library(keyed)
 
-# Declare that user_id should be unique
-users <- read.csv("users.csv") |>
-  key(user_id)
+# Declare your assumption: customer_id is unique
+customers <- read.csv("customers_march.csv") |>
+  key(customer_id)
+#> Error: Column 'customer_id' is not unique (12 duplicates)
+```
+
+The error catches the problem **at import**, not downstream.
+
+```r
+# Clean data works fine
+customers <- read.csv("customers_feb.csv") |>
+  key(customer_id)
 
 # Keys survive dplyr transformations
-active <- users |> filter(status == "active")
+active <- customers |> filter(status == "active")
 has_key(active)
 #> [1] TRUE
 
-# Warns if a transformation breaks uniqueness
-users |> mutate(user_id = 1)
-#> Warning: Column 'user_id' is no longer unique. Removing key.
+# Warns if you accidentally break uniqueness
+customers |> mutate(customer_id = 1)
+#> Warning: Column 'customer_id' is no longer unique. Removing key.
 ```
 
 ## Statement of Need
@@ -52,10 +81,10 @@ pak::pak("gcol33/keyed")
 
 ```r
 key(data, col1, col2)           # Declare unique columns
-assume_unique(data, col)        # Assert uniqueness
-assume_no_na(data, col)         # Assert no missing values
-assume_complete(data, col, expected = c("A", "B"))
-assume_nrow(data, min = 100)    # Assert row count bounds
+lock_unique(data, col)        # Assert uniqueness
+lock_no_na(data, col)         # Assert no missing values
+lock_complete(data, col, expected = c("A", "B"))
+lock_nrow(data, min = 100)    # Assert row count bounds
 ```
 
 ### Join Diagnostics

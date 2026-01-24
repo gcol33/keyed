@@ -64,7 +64,7 @@ But it will silently corrupt your analysis.
 # Define what you expect: customer_id is unique
 january_keyed <- january |>
   key(customer_id) |>
-  assume_no_na(email)
+  lock_no_na(email)
 
 # This works - January data is clean
 january_keyed
@@ -96,8 +96,8 @@ The error catches the problem **at import time**, not downstream when you're deb
 validate_customer_export <- function(df) {
   df |>
     key(customer_id) |>
-    assume_no_na(email) |>
-    assume_nrow(min = 1)
+    lock_no_na(email) |>
+    lock_nrow(min = 1)
 }
 
 # January: passes
@@ -298,11 +298,11 @@ clear_all_snapshots()
 
 | Function | Validates |
 |----------|-----------|
-| `assume_unique()` | No duplicate values |
-| `assume_no_na()` | No missing values |
-| `assume_complete()` | All expected values present |
-| `assume_coverage()` | Reference values covered |
-| `assume_nrow()` | Row count within bounds |
+| `lock_unique()` | No duplicate values |
+| `lock_no_na()` | No missing values |
+| `lock_complete()` | All expected values present |
+| `lock_coverage()` | Reference values covered |
+| `lock_nrow()` | Row count within bounds |
 
 ### Diagnostics
 
