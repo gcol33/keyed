@@ -1,4 +1,5 @@
 # keyed
+
 [![R-CMD-check](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml)
 [![Codecov test coverage](https://codecov.io/gh/gcol33/keyed/graph/badge.svg)](https://app.codecov.io/gh/gcol33/keyed)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -7,129 +8,14 @@
 
 In databases, you declare `customer_id` as a primary key and the database enforces uniqueness. With CSV and Excel files, you get no such guarantees - duplicates slip in silently.
 
-keyed brings primary key behavior to R data frames:
+keyed brings database-style protections to R data frames through four features:
 
-```r
-library(keyed)
-
-# Declare customer_id as the primary key (must be unique)
-customers <- read.csv("customers.csv") |>
-  key(customer_id)
-```
-
-If `customer_id` has duplicates, you get an error immediately - not after your analysis is corrupted.
-
-## How It Works
-
-### 1. Define a key (like a primary key)
-
-```r
-# Single column key
-users <- key(users, user_id)
-
-# Composite key (combination must be unique)
-sales <- key(sales, region, date)
-```
-
-### 2. The key follows your data
-
-```r
-# Base R - key survives subsetting
-active_users <- users[users$status == "active", ]
-has_key(active_users)
-#> [1] TRUE
-
-# dplyr - key survives filter, mutate, arrange, etc.
-active_users <- users |> filter(status == "active")
-has_key(active_users)
-#> [1] TRUE
-```
-
-### 3. Get stopped if you break it
-
-```r
-# Base R
-users$user_id <- 1
-#> Error: Key is no longer unique after transformation.
-#> i Use `unkey()` first if you intend to break uniqueness.
-
-# dplyr
-users |> mutate(user_id = 1)
-#> Error: Key is no longer unique after transformation.
-#> i Use `unkey()` first if you intend to break uniqueness.
-```
-
-No silent corruption. You must explicitly acknowledge breaking the key with `unkey()`.
-
-## Real Example: Monthly Data Imports
-
-```r
-# Base R
-validate_customers <- function(file) {
-  df <- read.csv(file)
-  df <- key(df, customer_id)
-  lock_no_na(df, email)
-  lock_nrow(df, min = 100)
-  df
-}
-
-# dplyr
-validate_customers <- function(file) {
-  read.csv(file) |>
-    key(customer_id) |>
-    lock_no_na(email) |>
-    lock_nrow(min = 100)
-}
-
-# January: clean data, works fine
-jan <- validate_customers("customers_jan.csv")
-
-# February: upstream bug introduced duplicates
-feb <- validate_customers("customers_feb.csv")
-#> Error: Column 'customer_id' is not unique (12 duplicates)
-```
-
-## Join Diagnostics
-
-Before joining, understand what will happen:
-
-```r
-diagnose_join(customers, orders, by = "customer_id")
-#> ── Join Diagnosis
-#> Cardinality: one-to-many
-#> customers: 1000 rows (unique on customer_id)
-#> orders:    5432 rows (4432 duplicates on customer_id)
-#>
-#> Left join will produce ~5432 rows
-```
-
-No more surprise row explosions.
-
-## Row UUIDs
-
-Your data has no natural key? Generate one:
-
-```r
-# Add a UUID to each row
-customers <- add_id(customers)
-customers
-#>                .id name
-#> 1 a3f2c8e1b9d04567 Alice
-#> 2 7b1e4a9c2f8d3601 Bob
-#> 3 e9c7b2a1d4f80235 Carol
-
-# UUIDs survive all transformations
-filtered <- customers[customers$name != "Bob", ]
-get_id(filtered)
-#> [1] "a3f2c8e1b9d04567" "e9c7b2a1d4f80235"
-
-# Track what changed between versions
-compare_ids(customers, filtered)
-#> Lost: 1 row (7b1e4a9c2f8d3601)
-#> Kept: 2 rows
-```
-
-UUIDs let you trace rows through your entire pipeline - even after joins, filters, and reshaping.
+| Feature | What it does |
+|---------|--------------|
+| **Keys** | Declare unique columns, enforced through transformations |
+| **Locks** | Assert conditions (no NAs, row counts, coverage) |
+| **UUIDs** | Track row identity through your pipeline |
+| **Commits** | Snapshot data to detect drift |
 
 ## Installation
 
@@ -138,18 +24,137 @@ UUIDs let you trace rows through your entire pipeline - even after joins, filter
 pak::pak("gcol33/keyed")
 ```
 
-## Quick Reference
+---
 
-| Function | What it does |
-|----------|--------------|
-| `key(df, col)` | Declare primary key (errors if not unique) |
-| `unkey(df)` | Remove key (required before breaking uniqueness) |
-| `has_key(df)` | Check if data has a key |
-| `add_id(df)` | Add UUID to each row |
-| `compare_ids(old, new)` | See which rows were added/removed |
-| `lock_unique(df, col)` | Assert column is unique |
-| `lock_no_na(df, col)` | Assert no missing values |
-| `diagnose_join(x, y)` | Preview join cardinality |
+## 1. Keys
+
+Declare which columns must be unique - like a primary key in a database.
+
+```r
+library(keyed)
+
+# Declare the key (errors if not unique)
+customers <- read.csv("customers.csv") |>
+  key(customer_id)
+
+# Composite keys work too
+sales <- key(sales, region, year)
+```
+
+**Keys follow your data through transformations:**
+
+```r
+# Base R
+active <- customers[customers$status == "active", ]
+has_key(active)
+#> [1] TRUE
+
+# dplyr
+active <- customers |> filter(status == "active")
+has_key(active)
+#> [1] TRUE
+```
+
+**Keys block operations that would break uniqueness:**
+
+```r
+customers |> mutate(customer_id = 1)
+#> Error: Key is no longer unique after transformation.
+#> i Use `unkey()` first if you intend to break uniqueness.
+
+# To proceed, explicitly remove the key first
+customers |> unkey() |> mutate(customer_id = 1)
+```
+
+**Preview joins before running them:**
+
+```r
+diagnose_join(customers, orders, by = "customer_id")
+#> Cardinality: one-to-many
+#> customers: 1000 rows (unique)
+#> orders:    5432 rows (4432 duplicates)
+#> Left join will produce ~5432 rows
+```
+
+---
+
+## 2. Locks
+
+Assert conditions at checkpoints in your pipeline.
+
+```r
+customers |>
+  lock_unique(customer_id) |>    # Must be unique
+  lock_no_na(email) |>           # No missing emails
+  lock_nrow(min = 100)           # At least 100 rows
+```
+
+Locks error immediately if the condition fails - no silent continuation.
+
+**Available locks:**
+
+| Function | Checks |
+|----------|--------|
+| `lock_unique(df, col)` | No duplicate values |
+| `lock_no_na(df, col)` | No missing values |
+| `lock_complete(df)` | No NAs in any column |
+| `lock_coverage(df, threshold, col)` | % non-NA above threshold |
+| `lock_nrow(df, min, max)` | Row count in range |
+
+---
+
+## 3. UUIDs
+
+When your data has no natural key, generate stable row identifiers.
+
+```r
+# Add a UUID to each row
+customers <- add_id(customers)
+#>                .id name
+#> 1 a3f2c8e1b9d04567 Alice
+#> 2 7b1e4a9c2f8d3601 Bob
+#> 3 e9c7b2a1d4f80235 Carol
+```
+
+**UUIDs survive all transformations:**
+
+```r
+filtered <- customers |> filter(name != "Bob")
+get_id(filtered)
+#> [1] "a3f2c8e1b9d04567" "e9c7b2a1d4f80235"
+```
+
+**Track which rows were added or removed:**
+
+```r
+compare_ids(customers, filtered)
+#> Lost: 1 row (7b1e4a9c2f8d3601)
+#> Kept: 2 rows
+```
+
+UUIDs let you trace rows through joins, filters, and reshaping - essential for debugging data pipelines.
+
+---
+
+## 4. Commits
+
+Snapshot your data to detect unexpected changes (drift).
+
+```r
+# Save current state as reference
+reference <- customers |> commit_keyed()
+
+# Later, after some processing...
+check_drift(current_data)
+#> Drift detected!
+#> - 24 rows added
+#> - 3 cells modified
+#> - Column 'status' changed in 12 rows
+```
+
+Useful for catching upstream data changes that would silently break your analysis.
+
+---
 
 ## When to Use Something Else
 
@@ -159,7 +164,7 @@ pak::pak("gcol33/keyed")
 | Full data validation | pointblank, validate |
 | Production pipelines | targets |
 
-keyed gives you the primary key validation of a database without needing actual database infrastructure. For exploratory workflows where SQLite is overkill but silent corruption is unacceptable.
+keyed gives you database-style protections without database infrastructure. For exploratory workflows where SQLite is overkill but silent corruption is unacceptable.
 
 ## Documentation
 
