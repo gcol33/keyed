@@ -138,21 +138,31 @@ UUIDs let you trace rows through joins, filters, and reshaping - essential for d
 
 ## 4. Commits
 
-Snapshot your data to detect unexpected changes (drift).
+Snapshot your data to detect unexpected changes later.
 
 ```r
-# Save current state as reference
-reference <- customers |> commit_keyed()
+# Save a snapshot (stored in memory for this session)
+customers <- customers |> commit_keyed()
 
-# Later, after some processing...
-check_drift(current_data)
+# Work with your data...
+customers <- customers |>
+  filter(status == "active") |>
+  mutate(score = score + 10)
+
+# Check what changed since the commit
+check_drift(customers)
 #> Drift detected!
-#> - 24 rows added
-#> - 3 cells modified
-#> - Column 'status' changed in 12 rows
+#> - Row count: 1000 -> 847 (-153)
+#> - Column 'score' modified
 ```
 
-Useful for catching upstream data changes that would silently break your analysis.
+**How it works:**
+- Each data frame can have one snapshot attached
+- Snapshots persist for your R session (lost on restart)
+- `check_drift()` compares current state to the snapshot
+- `clear_snapshot()` removes it, `list_snapshots()` shows all
+
+Useful for catching unexpected changes during interactive analysis.
 
 ---
 
