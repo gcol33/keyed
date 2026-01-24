@@ -1,9 +1,19 @@
 # keyed 0.1.1
 
+## Breaking Changes
+
+* Operations that break key uniqueness now **error** instead of warning.
+  Previously, keyed would warn and silently remove the key. Now it stops
+  with an error, requiring explicit `unkey()` to proceed. This prevents
+  silent data corruption.
+
+## Improvements
+
 * Added Codecov integration for test coverage tracking
-* Improved README with problem-solution framing in Quick Start
+* Improved README with problem-solution framing and Row UUIDs section
 * Added CONTRIBUTING.md with contribution guidelines
 * Expanded test suite to 90%+ coverage
+* Fixed `find_duplicates()` to work with keyed data that has duplicates
 
 # keyed 0.1.0
 
@@ -14,7 +24,6 @@
 * `key()` / `unkey()`: Define and remove keys from data frames
 * `has_key()` / `get_key_cols()` / `key_is_valid()`: Query key status
 * Keys survive dplyr transformations (filter, mutate, arrange, etc.)
-* Graceful degradation with warnings when key uniqueness breaks
 
 ### Assumption Checks
 

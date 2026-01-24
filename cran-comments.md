@@ -6,7 +6,7 @@
 
 ## Test environments
 
-- Local: Windows 11, R 4.4.x
+- Local: Windows 11, R 4.5.2
 - GitHub Actions:
   - macOS-latest (R release)
   - windows-latest (R release)
