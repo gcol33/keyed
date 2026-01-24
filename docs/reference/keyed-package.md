@@ -12,10 +12,11 @@ Useful links:
 
 - <https://github.com/gcol33/keyed>
 
-- <https://gcol33.github.io/keyed/>
+- <https://gillescolling.com/keyed/>
 
 - Report bugs at <https://github.com/gcol33/keyed/issues>
 
 ## Author
 
 **Maintainer**: Gilles Colling <gillescolling@gmail.com>
+([ORCID](https://orcid.org/0000-0003-3070-6066)) \[copyright holder\]

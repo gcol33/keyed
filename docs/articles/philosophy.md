@@ -1,129 +1,105 @@
 # Design Philosophy
 
-## Who This Package Is For
+## The Flat-File Reality
 
-keyed targets **flat-file workflows** where you typically have:
+Most data analysis doesn’t happen in databases. It happens with: - CSV
+exports from business systems
 
-- No version control
-- No database
-- No schema
-- Multiple drifting CSV copies
+- Excel files from collaborators
 
-This describes most data analysis in practice: exports from systems,
-shared spreadsheets, periodic dumps. The data lives in files, not tables
-with enforced constraints.
+- Periodic data dumps with no schema
 
-## The Problem
+- Multiple versions of “the same” file
 
-Flat-file workflows rely on implicit assumptions:
+In this world, there’s no enforced uniqueness constraint, no foreign key
+validation, no schema migration. The constraints exist only in your
+head—or in scattered comments that nobody reads.
 
-- “This column is unique”
-- “These two columns together form a key”
-- “There shouldn’t be NAs here”
-- “This join should be one-to-one”
+``` r
 
-These assumptions live in your head, in scattered comments, or nowhere
-at all. When data changes upstream, assumptions break silently. You
-discover the problem downstream—wrong row counts after a join,
-duplicated records, missing values where you expected none.
+# customer_id should be unique... I think?
+# email shouldn't have NAs... right?
+customers <- read.csv("customers_march_v3_FINAL.csv")
+```
 
-## The Approach
+When assumptions break, you discover it downstream: wrong row counts
+after a join, duplicated records in a report, a model that suddenly
+performs differently. By then, the damage is done.
 
-keyed makes assumptions explicit by attaching keys to data and **warning
-when those assumptions stop being true**.
+## Detection, Not Enforcement
 
-The core philosophy is **detection, not enforcement**:
+keyed takes a pragmatic approach: **detect problems early, don’t try to
+prevent them absolutely**.
 
-- Keys are defined once and validated at creation
-- Violations produce warnings, not errors (by default
-- Checks happen at boundaries (joins, exports, commits), not on every
-  operation
-- Metadata survives transformations when possible, degrades gracefully
-  when not
+This differs from database thinking:
 
-This differs from database thinking. Databases enforce constraints
-globally and reject invalid states. keyed operates in a world where:
+| Database Approach               | keyed Approach                        |
+|---------------------------------|---------------------------------------|
+| Reject invalid data             | Accept data, warn about violations    |
+| Enforce constraints globally    | Check at explicit boundaries          |
+| Transactions ensure consistency | No transactions, graceful degradation |
+| Schema prevents corruption      | Catches corruption after the fact     |
 
-- Data arrives pre-corrupted
-- Transformations happen outside your control
-- R’s copy semantics mean attributes can vanish
-- Session boundaries reset everything
+Why not enforce constraints? Because in flat-file workflows:
 
-Rather than fighting this, keyed accepts it. The goal is catching
-problems early, not preventing them absolutely.
+1.  **Data arrives pre-corrupted** — You can’t reject an export you
+    already received
 
-## What keyed Is Not
+2.  **Transformations happen outside your control** — Upstream systems
+    change without notice
 
-keyed deliberately avoids:
+3.  **R’s copy semantics lose attributes** — Metadata can vanish
+    unexpectedly
 
-- **Transactions**: No rollback, no atomic operations
-- **Version history**: No branches, no diffs over time
-- **Database semantics**: No foreign key enforcement, no cascading
-  updates
-- **Global invariants**: No system-wide state that must stay consistent
-- **Required infrastructure**: No sidecar files, no databases, no
-  services
+4.  **Session boundaries reset state** — No persistent enforcement
+    possible
 
-These are non-goals, not missing features. Each would require
-infrastructure that contradicts the flat-file context keyed targets.
+Rather than fighting this reality, keyed accepts it. The goal is
+catching problems when you can still fix them—at import, before joins,
+during validation—not preventing problems that are already inevitable.
 
 ## Boundary Checks
 
-Checks run at meaningful boundaries:
+Checks run at meaningful moments, not continuously:
 
-| Check at | Examples |
-|----|----|
-| Key creation | [`key()`](https://gcol33.github.io/keyed/reference/key.md) validates uniqueness |
-| Joins | [`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md) reports cardinality |
-| Snapshots | [`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md) and [`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md) |
-| Explicit assertions | [`assume_unique()`](https://gcol33.github.io/keyed/reference/assume_unique.md), [`assume_no_na()`](https://gcol33.github.io/keyed/reference/assume_no_na.md) |
+``` r
 
-Checks do **not** run on:
+df <- data.frame(id = 1:3, value = c("a", "b", "c"))
 
-- [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html),
-  [`select()`](https://dplyr.tidyverse.org/reference/select.html),
-  [`filter()`](https://dplyr.tidyverse.org/reference/filter.html)
-- [`print()`](https://rdrr.io/r/base/print.html) or casual inspection
-- Every row access
+# Check happens HERE - at key definition
+df <- key(df, id)
+
+# No check here - just a filter
+df_filtered <- df |> filter(id > 1)
+
+# No check here - just adding a column
+df_enriched <- df |> mutate(upper = toupper(value))
+
+# Check happens HERE - at explicit assertion
+df |> assume_no_na(value)
+```
 
 This keeps the package lightweight. You opt into validation where it
-matters.
+matters:
+
+| Boundary | Example |
+|----|----|
+| Key definition | [`key()`](https://gcol33.github.io/keyed/reference/key.md) validates uniqueness |
+| Explicit assertions | [`assume_unique()`](https://gcol33.github.io/keyed/reference/assume_unique.md), [`assume_no_na()`](https://gcol33.github.io/keyed/reference/assume_no_na.md) |
+| Before joins | [`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md) |
+| Drift checks | [`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md) → [`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md) |
 
 ## Graceful Degradation
 
-Key metadata travels with the data through dplyr operations:
+When operations break key assumptions, keyed warns rather than errors:
 
 ``` r
 
-library(keyed)
-library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
+df <- data.frame(id = 1:3, x = c("a", "b", "c")) |>
+  key(id)
 
-df <- data.frame(id = 1:3, x = c("a", "b", "c"))
-df <- key(df, id)
-
-# Key survives filtering
-df |> filter(id > 1) |> has_key()
-#> [1] TRUE
-
-# Key survives mutation
-df |> mutate(y = toupper(x)) |> has_key()
-#> [1] TRUE
-```
-
-But if an operation breaks uniqueness, the key is dropped with a warning
-rather than an error:
-
-``` r
-
-# Creates duplicates - key dropped
+# This would create duplicate ids
+# Key is dropped with warning, not error
 df |> mutate(id = 1)
 #> Warning: Key modified and is no longer unique.
 #> # A tibble: 3 × 2
@@ -134,40 +110,68 @@ df |> mutate(id = 1)
 #> 3     1 c
 ```
 
-This reflects reality: sometimes transformations legitimately break
-keys. keyed tells you when this happens rather than blocking the
-operation.
+Why warn instead of error?
 
-## When to Use Something Else
+1.  **Legitimate transformations break keys** — Aggregation,
+    cross-joins, reshaping
 
-keyed is the wrong tool if you need:
+2.  **Debugging is easier** — You see the result + warning, not just an
+    error
 
-| Need                 | Better alternative        |
-|----------------------|---------------------------|
-| Enforced schema      | Database (SQLite, DuckDB) |
-| Version history      | Git, git2r                |
-| Type safety          | vctrs, typed data frames  |
-| Full data validation | pointblank, validate      |
-| Production pipelines | targets, drake            |
+3.  **Pipelines don’t halt unexpectedly** — You control when to enforce
+    strictly
 
-keyed fills a specific gap: lightweight key tracking for exploratory and
-semi-structured workflows where heavier tools add friction.
+For strict enforcement, use `assume_*()` functions which do error:
+
+``` r
+
+# This WILL error
+df |>
+  mutate(id = 1) |>
+  assume_unique(id)
+#> Warning: Key modified and is no longer unique.
+#> Warning: Uniqueness assumption violated.
+#> ℹ 2 duplicate value(s) in: id
+#> ℹ Rows: 3, Unique: 1
+```
+
+## What keyed Doesn’t Do
+
+These are deliberate non-goals:
+
+| Feature | Why Not |
+|----|----|
+| Transactions | Requires infrastructure flat-file workflows don’t have |
+| Version history | Use Git for that |
+| Foreign key enforcement | Can’t enforce across independent files |
+| Cascading updates | No persistent state between sessions |
+| Type validation | Use vctrs or typed data frames |
+
+Each would require infrastructure that contradicts the flat-file
+context. keyed stays minimal by design.
 
 ## Summary
 
 keyed helps you:
 
-1.  Define keys explicitly with
-    [`key()`](https://gcol33.github.io/keyed/reference/key.md)
-2.  Check assumptions with `assume_*()` functions
-3.  Diagnose joins before running them
-4.  Track row identity with
-    [`add_id()`](https://gcol33.github.io/keyed/reference/add_id.md)
-5.  Detect drift with
-    [`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md)
-    and
+1.  **Define keys explicitly** — `key(df, col1, col2)`
+
+2.  **Check assumptions at boundaries** —
+    [`assume_unique()`](https://gcol33.github.io/keyed/reference/assume_unique.md),
+    [`assume_no_na()`](https://gcol33.github.io/keyed/reference/assume_no_na.md)
+
+3.  **Diagnose joins before problems occur** —
+    [`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md)
+
+4.  **Track row identity** —
+    [`add_id()`](https://gcol33.github.io/keyed/reference/add_id.md),
+    [`compare_ids()`](https://gcol33.github.io/keyed/reference/compare_ids.md)
+
+5.  **Detect drift between versions** —
+    [`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md),
     [`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md)
 
 The package warns when assumptions break. It doesn’t enforce correctness
-or provide versioning. This constraint is intentional—it keeps the
-package simple and appropriate for its target context.
+absolutely. This constraint is intentional—it keeps keyed appropriate
+for the messy, schema-free world where most data analysis actually
+happens.

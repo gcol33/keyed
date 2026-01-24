@@ -8,3 +8,4 @@
 ^pkgdown$
 ^\.claude$
 ^CONTRIBUTING\.md$
+^cran-comments\.md$

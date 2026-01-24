@@ -1,265 +1,495 @@
 # Quick Start
 
-## Overview
+## The Problem: Silent Data Corruption
 
-**keyed** makes key assumptions explicit in flat-file data workflows.
-Define keys once, validate at creation, and let the package warn you
-when assumptions break.
+You receive monthly customer exports from a CRM system. The data should
+have unique `customer_id` values and complete `email` addresses. One
+month, someone upstream changes the export logic. Now `customer_id` has
+duplicates and some emails are missing.
 
-**Key features:**
-
-- Define keys with
-  [`key()`](https://gcol33.github.io/keyed/reference/key.md) - single or
-  composite columns
-- Keys survive dplyr transformations (filter, mutate, arrange, etc.)
-- Assumption checks with
-  [`assume_unique()`](https://gcol33.github.io/keyed/reference/assume_unique.md),
-  [`assume_no_na()`](https://gcol33.github.io/keyed/reference/assume_no_na.md),
-  etc.
-- Join diagnostics with
-  [`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md)
-- Optional row IDs for lineage tracking with
-  [`add_id()`](https://gcol33.github.io/keyed/reference/add_id.md)
-- Snapshot-based drift detection with
-  [`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md)
-  and
-  [`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md)
-
-## Installation
+**Without explicit checks, you won’t notice until something breaks
+downstream**—wrong row counts after a join, duplicated invoices, failed
+email campaigns.
 
 ``` r
 
-# install.packages("pak")
-pak::pak("gcol33/keyed")
-```
-
-## Basic Usage
-
-### Defining Keys
-
-The only required action is defining a key:
-
-``` r
-
-library(keyed)
-library(dplyr)
-
-# Create sample data
-users <- data.frame(
-  user_id = 1:5,
-  name = c("Alice", "Bob", "Carol", "Dave", "Eve"),
+# January export: clean data
+january <- data.frame(
+  customer_id = c(101, 102, 103, 104, 105),
   email = c("alice@example.com", "bob@example.com", "carol@example.com",
-            "dave@example.com", "eve@example.com")
+            "dave@example.com", "eve@example.com"),
+  segment = c("premium", "basic", "premium", "basic", "premium")
 )
 
-# Define the key
-users <- key(users, user_id)
-users
-#> # A keyed tibble: 5 x 3
-#> # Key:            user_id
-#>   user_id name  email            
-#>     <int> <chr> <chr>            
-#> 1       1 Alice alice@example.com
-#> 2       2 Bob   bob@example.com  
-#> 3       3 Carol carol@example.com
-#> 4       4 Dave  dave@example.com 
-#> 5       5 Eve   eve@example.com
+# February export: corrupted upstream (duplicates + missing email)
+february <- data.frame(
+  customer_id = c(101, 102, 102, 104, 105),  # Note: 102 is duplicated
+
+  email = c("alice@example.com", "bob@example.com", NA,
+            "dave@example.com", "eve@example.com"),
+  segment = c("premium", "basic", "basic", "basic", "premium")
+)
 ```
 
-### Keys Survive Transformations
+The February data looks fine at a glance:
 
-The key persists through dplyr operations:
+``` r
+
+head(february)
+#>   customer_id             email segment
+#> 1         101 alice@example.com premium
+#> 2         102   bob@example.com   basic
+#> 3         102              <NA>   basic
+#> 4         104  dave@example.com   basic
+#> 5         105   eve@example.com premium
+nrow(february)  # Same row count
+#> [1] 5
+```
+
+But it will silently corrupt your analysis.
+
+------------------------------------------------------------------------
+
+## The Solution: Make Assumptions Explicit
+
+**keyed** catches these issues by making your assumptions explicit:
+
+``` r
+
+# Define what you expect: customer_id is unique
+january_keyed <- january |>
+  key(customer_id) |>
+  assume_no_na(email)
+
+# This works - January data is clean
+january_keyed
+#> # A keyed tibble: 5 x 3
+#> # Key:            customer_id
+#>   customer_id email             segment
+#>         <dbl> <chr>             <chr>  
+#> 1         101 alice@example.com premium
+#> 2         102 bob@example.com   basic  
+#> 3         103 carol@example.com premium
+#> 4         104 dave@example.com  basic  
+#> 5         105 eve@example.com   premium
+```
+
+Now try the same with February’s corrupted data:
+
+``` r
+
+# This fails immediately - duplicates detected
+february |>
+  key(customer_id)
+#> Warning: Key is not unique.
+#> ℹ 1 duplicate key value(s) found.
+#> ℹ Key columns: customer_id
+#> # A keyed tibble: 5 x 3
+#> # Key:            customer_id
+#>   customer_id email             segment
+#>         <dbl> <chr>             <chr>  
+#> 1         101 alice@example.com premium
+#> 2         102 bob@example.com   basic  
+#> 3         102 NA                basic  
+#> 4         104 dave@example.com  basic  
+#> 5         105 eve@example.com   premium
+```
+
+The error catches the problem **at import time**, not downstream when
+you’re debugging a mysterious row count mismatch.
+
+------------------------------------------------------------------------
+
+## Workflow 1: Monthly Data Validation
+
+**Goal**: Validate each month’s export against expected constraints
+before processing.
+
+**Challenge**: Data quality varies month-to-month. Silent corruption
+causes cascading errors.
+
+**Strategy**: Define keys and assumptions once, apply consistently to
+each import.
+
+### Define validation function
+
+``` r
+
+validate_customer_export <- function(df) {
+  df |>
+    key(customer_id) |>
+    assume_no_na(email) |>
+    assume_nrow(min = 1)
+}
+
+# January: passes
+january_clean <- validate_customer_export(january)
+summary(january_clean)
+#> 
+#> ── Keyed Data Frame Summary
+#> Dimensions: 5 rows x 3 columns
+#> 
+#> Key columns: customer_id
+#> ✔ Key is unique
+#> 
+#> Row IDs: none
+```
+
+### Keys survive transformations
+
+Once defined, keys persist through dplyr operations:
 
 ``` r
 
 # Filter preserves key
-active <- users |> filter(user_id <= 3)
-has_key(active)
+premium_customers <- january_clean |>
+  filter(segment == "premium")
+
+has_key(premium_customers)
 #> [1] TRUE
+get_key_cols(premium_customers)
+#> [1] "customer_id"
 
 # Mutate preserves key
-enriched <- users |> mutate(domain = sub(".*@", "", email))
-get_key_cols(enriched)
-#> [1] "user_id"
+enriched <- january_clean |>
+  mutate(domain = sub(".*@", "", email))
+
+has_key(enriched)
+#> [1] TRUE
 ```
 
-If an operation breaks uniqueness, the key degrades gracefully:
+### Graceful degradation
+
+If an operation breaks uniqueness, keyed warns you rather than failing
+silently:
 
 ``` r
 
-# This would create duplicates - key is dropped with warning
-users |> mutate(user_id = 1)
+# This creates duplicates - key is dropped with warning
+january_clean |>
+  mutate(customer_id = 1)
 #> Warning: Key modified and is no longer unique.
 #> # A tibble: 5 × 3
-#>   user_id name  email            
-#>     <dbl> <chr> <chr>            
-#> 1       1 Alice alice@example.com
-#> 2       1 Bob   bob@example.com  
-#> 3       1 Carol carol@example.com
-#> 4       1 Dave  dave@example.com 
-#> 5       1 Eve   eve@example.com
+#>   customer_id email             segment
+#>         <dbl> <chr>             <chr>  
+#> 1           1 alice@example.com premium
+#> 2           1 bob@example.com   basic  
+#> 3           1 carol@example.com premium
+#> 4           1 dave@example.com  basic  
+#> 5           1 eve@example.com   premium
 ```
 
-### Composite Keys
+The warning tells you exactly what happened. No silent corruption.
 
-Use multiple columns as a key:
+------------------------------------------------------------------------
+
+## Workflow 2: Safe Joins
+
+**Goal**: Join customer data with orders without accidentally
+duplicating rows.
+
+**Challenge**: Join cardinality mistakes are common and hard to debug. A
+“one-to-one” join that’s actually one-to-many silently inflates your
+data.
+
+**Strategy**: Use
+[`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md)
+to understand cardinality *before* joining.
+
+### Create sample data
 
 ``` r
+
+customers <- data.frame(
+  customer_id = 1:5,
+  name = c("Alice", "Bob", "Carol", "Dave", "Eve"),
+  tier = c("gold", "silver", "gold", "bronze", "silver")
+) |>
+  key(customer_id)
 
 orders <- data.frame(
-  customer_id = c(1, 1, 2, 2),
-  order_date = c("2024-01-01", "2024-01-02", "2024-01-01", "2024-01-03"),
-  amount = c(100, 150, 200, 75)
-)
-
-orders <- key(orders, customer_id, order_date)
-orders
-#> # A keyed tibble: 4 x 3
-#> # Key:            customer_id, order_date
-#>   customer_id order_date amount
-#>         <dbl> <chr>       <dbl>
-#> 1           1 2024-01-01    100
-#> 2           1 2024-01-02    150
-#> 3           2 2024-01-01    200
-#> 4           2 2024-01-03     75
+  order_id = 1:8,
+  customer_id = c(1, 1, 2, 3, 3, 3, 4, 5),
+  amount = c(100, 150, 200, 50, 75, 125, 300, 80)
+) |>
+  key(order_id)
 ```
 
-## Assumption Checks
-
-Validate assumptions at key points in your workflow:
+### Diagnose before joining
 
 ``` r
 
-# Check uniqueness
-assume_unique(users, user_id)
-
-# Check for missing values
-assume_no_na(users, email)
-
-# Check row count expectations
-assume_nrow(users, min = 1, max = 100)
+diagnose_join(customers, orders, by = "customer_id", use_joinspy = FALSE)
+#> 
+#> ── Join Diagnosis
+#> Cardinality: one-to-many
+#> x: 5 rows, unique
+#> y: 8 rows, 3 duplicates
 ```
 
-## Join Diagnostics
+The diagnosis shows:
 
-Before joining, diagnose the cardinality:
+- **Cardinality is one-to-many**: Each customer can have multiple orders
+
+- **Coverage**: Shows how many keys match vs. don’t match
+
+Now you know what to expect. A
+[`left_join()`](https://dplyr.tidyverse.org/reference/mutate-joins.html)
+will create 8 rows (one per order), not 5 (one per customer).
+
+### Compare key structures
 
 ``` r
 
-orders <- data.frame(
-  order_id = 1:6,
-  user_id = c(1, 1, 2, 3, 3, 3),
-  amount = c(100, 150, 200, 50, 75, 125)
-)
-
-diagnose_join(users, orders, by = "user_id")
+compare_keys(customers, orders)
+#> 
+#> ── Key Comparison
+#> Comparing on: customer_id
+#> 
+#> x: 5 unique keys
+#> y: 5 unique keys
+#> 
+#> Common: 5 (100.0% of x)
+#> Only in x: 0
+#> Only in y: 0
 ```
 
-## Row Identity Tracking
+This shows the join key exists in both tables but with different
+uniqueness properties—essential information before joining.
 
-For lineage tracking, add stable UUIDs to rows:
+------------------------------------------------------------------------
+
+## Workflow 3: Row Identity Tracking
+
+**Goal**: Track which original rows survive through a complex pipeline.
+
+**Challenge**: After filtering, aggregating, and joining, you lose track
+of which source rows contributed to your final data.
+
+**Strategy**: Use
+[`add_id()`](https://gcol33.github.io/keyed/reference/add_id.md) to
+attach stable identifiers that survive transformations.
+
+### Add row IDs
 
 ``` r
 
-# Add IDs
-users_tracked <- users |> add_id()
-users_tracked
+# Add UUIDs to rows
+customers_tracked <- customers |>
+  add_id()
+
+customers_tracked
 #> # A keyed tibble: 5 x 4
-#> # Key:            user_id | .id
-#>   .id                                  user_id name  email            
-#>   <chr>                                  <int> <chr> <chr>            
-#> 1 95a12380-48f9-4911-8d06-06fc4289dab8       1 Alice alice@example.com
-#> 2 d76f353c-a389-407d-9dfc-84f569a8991f       2 Bob   bob@example.com  
-#> 3 c78ff452-af48-4062-8e04-44fc40d27235       3 Carol carol@example.com
-#> 4 6ca05a5d-e9a4-4668-b611-767e9b4b2c19       4 Dave  dave@example.com 
-#> 5 59a6cfa6-2b78-4a9b-ada4-852f618b74bd       5 Eve   eve@example.com
-
-# Check ID status
-summary(users_tracked)
-#> 
-#> ── Keyed Data Frame Summary
-#> Dimensions: 5 rows x 4 columns
-#> 
-#> Key columns: user_id
-#> ✔ Key is unique
-#> 
-#> Row IDs: present (.id column)
-#> ✔ 5 unique IDs, no issues
+#> # Key:            customer_id | .id
+#>   .id                                  customer_id name  tier  
+#>   <chr>                                      <int> <chr> <chr> 
+#> 1 7c04f88e-e5bd-4329-a3ba-d4f8f65f9c7a           1 Alice gold  
+#> 2 e0aafb43-0892-43ad-8039-ad8733617c25           2 Bob   silver
+#> 3 8119100f-1e5c-4338-bd15-677017694593           3 Carol gold  
+#> 4 42cfb1b6-1b7c-4e4d-9bb4-4dc35bba61c5           4 Dave  bronze
+#> 5 b8b047db-1474-47b1-a73d-c3bceea59076           5 Eve   silver
 ```
 
-### Combining Data with IDs
-
-When combining datasets, use
-[`bind_id()`](https://gcol33.github.io/keyed/reference/bind_id.md) to
-handle IDs properly:
+### IDs survive transformations
 
 ``` r
 
-# Existing data with IDs
-batch1 <- add_id(data.frame(x = 1:3))
+# Filter: IDs persist
+gold_customers <- customers_tracked |>
+  filter(tier == "gold")
 
-# New data without IDs
-batch2 <- data.frame(x = 4:6)
+get_id(gold_customers)
+#> [1] "7c04f88e-e5bd-4329-a3ba-d4f8f65f9c7a"
+#> [2] "8119100f-1e5c-4338-bd15-677017694593"
 
-# Combine - checks for overlaps and fills missing IDs
+# Compare with original
+compare_ids(customers_tracked, gold_customers)
+#> $lost
+#> [1] "e0aafb43-0892-43ad-8039-ad8733617c25"
+#> [2] "42cfb1b6-1b7c-4e4d-9bb4-4dc35bba61c5"
+#> [3] "b8b047db-1474-47b1-a73d-c3bceea59076"
+#> 
+#> $gained
+#> character(0)
+#> 
+#> $preserved
+#> [1] "7c04f88e-e5bd-4329-a3ba-d4f8f65f9c7a"
+#> [2] "8119100f-1e5c-4338-bd15-677017694593"
+```
+
+The comparison shows exactly which rows were lost (filtered out) and
+which were preserved.
+
+### Combining data with ID handling
+
+When appending new data,
+[`bind_id()`](https://gcol33.github.io/keyed/reference/bind_id.md)
+handles ID conflicts:
+
+``` r
+
+batch1 <- data.frame(x = 1:3) |> add_id()
+batch2 <- data.frame(x = 4:6)  # No IDs yet
+
+# bind_id assigns new IDs to batch2 and checks for conflicts
 combined <- bind_id(batch1, batch2)
 combined
 #>                                    .id x
-#> 1 55926c8e-9795-4842-ae45-21153736ebd9 1
-#> 2 8eb39eba-3087-4d60-8a23-a3eaadfff18c 2
-#> 3 d889d9b9-c9c8-4cfc-9024-f8f2046a7e18 3
-#> 4 ef303a00-7ffa-4dbe-9dee-2e340c60ee78 4
-#> 5 8d6a7777-c1c2-42a4-bc02-caab63031fd5 5
-#> 6 13e50c5b-82c9-4373-8edd-623ea3eedf21 6
+#> 1 e19bac07-f676-4724-b252-b5f1116d5a5a 1
+#> 2 852c2ec5-95f1-439f-a6f9-fb7a31e77e42 2
+#> 3 d4b115d6-6200-4ed1-ad63-c79eb6cfb722 3
+#> 4 6fd72f58-a192-4094-9daa-fd259bcc3f6b 4
+#> 5 6abf5c8c-9846-41ac-bcfc-ba6e94a66eb6 5
+#> 6 7d12d6fc-5807-4f57-a935-10278143c5c9 6
 ```
 
-### Composite IDs from Columns
+------------------------------------------------------------------------
 
-Create deterministic IDs from column values:
+## Workflow 4: Drift Detection
+
+**Goal**: Detect when data changes unexpectedly between pipeline runs.
+
+**Challenge**: Reference data (lookup tables, dimension tables) changes
+upstream without notice. Your pipeline silently uses stale assumptions.
+
+**Strategy**: Commit snapshots with
+[`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md)
+and check for drift with
+[`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md).
+
+### Commit a reference snapshot
 
 ``` r
 
-sales <- data.frame(
-  country = c("US", "UK", "US"),
-  year = c(2023, 2023, 2024),
-  revenue = c(1000, 800, 1200)
-)
-
-sales <- make_id(sales, country, year)
-sales
-#>       .id country year revenue
-#> 1 US|2023      US 2023    1000
-#> 2 UK|2023      UK 2023     800
-#> 3 US|2024      US 2024    1200
+# Commit current state as reference
+reference_data <- data.frame(
+  region_id = c("US", "EU", "APAC"),
+  tax_rate = c(0.08, 0.20, 0.10)
+) |>
+  key(region_id) |>
+  commit_keyed()
+#> ✔ Snapshot committed: 76a76466...
 ```
 
-## Drift Detection
-
-Track changes over time with snapshots:
+### Check for drift
 
 ``` r
 
-# Commit a snapshot
-users <- commit_keyed(users)
-#> ✔ Snapshot committed: c2930fbe...
-
-# Later, check for drift
-check_drift(users)
+# No changes yet
+check_drift(reference_data)
 #> 
 #> ── Drift Report
 #> ✔ No drift detected
-#> Snapshot: c2930fbe... (2026-01-14 11:32)
+#> Snapshot: 76a76466... (2026-01-24 01:27)
+```
 
-# Clean up
+### Detect changes
+
+``` r
+
+# Simulate upstream change: EU tax rate changed
+modified_data <- reference_data
+modified_data$tax_rate[2] <- 0.21
+
+# Drift detected!
+check_drift(modified_data)
+#> 
+#> ── Drift Report
+#> ! Drift detected
+#> Snapshot: 76a76466... (2026-01-24 01:27)
+#> ℹ Key values changed
+#> ℹ Cell values modified
+```
+
+The drift report shows exactly what changed, letting you decide whether
+to accept the new data or investigate.
+
+### Cleanup
+
+``` r
+
+# Remove snapshots when done
 clear_all_snapshots()
 #> ! This will remove 1 snapshot(s) from cache.
 #> ✔ Cleared 1 snapshot(s).
 ```
 
-## What’s Next
+------------------------------------------------------------------------
 
-- See [Design
-  Philosophy](https://gcol33.github.io/keyed/articles/philosophy.md) for
-  the reasoning behind keyed
-- See [joinspy](https://github.com/gcol33/joinspy) for enhanced join
-  diagnostics
+## Quick Reference
+
+### Core Functions
+
+| Function | Purpose |
+|----|----|
+| [`key()`](https://gcol33.github.io/keyed/reference/key.md) | Define key columns (validates uniqueness) |
+| [`unkey()`](https://gcol33.github.io/keyed/reference/unkey.md) | Remove key |
+| [`has_key()`](https://gcol33.github.io/keyed/reference/has_key.md), [`get_key_cols()`](https://gcol33.github.io/keyed/reference/get_key_cols.md) | Query key status |
+
+### Assumption Checks
+
+| Function | Validates |
+|----|----|
+| [`assume_unique()`](https://gcol33.github.io/keyed/reference/assume_unique.md) | No duplicate values |
+| [`assume_no_na()`](https://gcol33.github.io/keyed/reference/assume_no_na.md) | No missing values |
+| [`assume_complete()`](https://gcol33.github.io/keyed/reference/assume_complete.md) | All expected values present |
+| [`assume_coverage()`](https://gcol33.github.io/keyed/reference/assume_coverage.md) | Reference values covered |
+| [`assume_nrow()`](https://gcol33.github.io/keyed/reference/assume_nrow.md) | Row count within bounds |
+
+### Diagnostics
+
+| Function | Purpose |
+|----|----|
+| [`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md) | Analyze join cardinality |
+| [`compare_keys()`](https://gcol33.github.io/keyed/reference/compare_keys.md) | Compare key structures |
+| [`compare_ids()`](https://gcol33.github.io/keyed/reference/compare_ids.md) | Compare row identities |
+| [`find_duplicates()`](https://gcol33.github.io/keyed/reference/find_duplicates.md) | Find duplicate key values |
+| [`key_status()`](https://gcol33.github.io/keyed/reference/key_status.md) | Quick status summary |
+
+### Row Identity
+
+| Function | Purpose |
+|----|----|
+| [`add_id()`](https://gcol33.github.io/keyed/reference/add_id.md) | Add UUID to rows |
+| [`get_id()`](https://gcol33.github.io/keyed/reference/get_id.md) | Retrieve row IDs |
+| [`bind_id()`](https://gcol33.github.io/keyed/reference/bind_id.md) | Combine data with ID handling |
+| [`make_id()`](https://gcol33.github.io/keyed/reference/make_id.md) | Create deterministic IDs from columns |
+| [`check_id()`](https://gcol33.github.io/keyed/reference/check_id.md) | Validate ID integrity |
+
+### Drift Detection
+
+| Function | Purpose |
+|----|----|
+| [`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md) | Save reference snapshot |
+| [`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md) | Compare against snapshot |
+| [`list_snapshots()`](https://gcol33.github.io/keyed/reference/list_snapshots.md) | View saved snapshots |
+| [`clear_snapshot()`](https://gcol33.github.io/keyed/reference/clear_snapshot.md) | Remove specific snapshot |
+
+------------------------------------------------------------------------
+
+## When to Use Something Else
+
+keyed is designed for **flat-file workflows** without database
+infrastructure. If you need:
+
+| Need                 | Better Alternative        |
+|----------------------|---------------------------|
+| Enforced schema      | Database (SQLite, DuckDB) |
+| Version history      | Git, git2r                |
+| Full data validation | pointblank, validate      |
+| Production pipelines | targets                   |
+
+keyed fills a specific gap: lightweight key tracking for exploratory and
+semi-structured workflows where heavier tools add friction.
+
+------------------------------------------------------------------------
+
+## See Also
+
+- [Design
+  Philosophy](https://gcol33.github.io/keyed/articles/philosophy.md) -
+  The reasoning behind keyed’s approach
+
+- [Function
+  Reference](https://gcol33.github.io/keyed/reference/index.md) -
+  Complete API documentation
