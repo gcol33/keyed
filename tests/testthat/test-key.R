@@ -51,8 +51,7 @@ test_that("key_is_valid() detects invalid keys", {
   df2$id <- NULL
   class(df2) <- class(df)
   attr(df2, "keyed_cols") <- "id"
-  expect_warning(result <- key_is_valid(df2))
-  expect_false(result)
+  expect_false(key_is_valid(df2))
 })
 
 test_that("key<- assignment works", {
@@ -86,8 +85,7 @@ test_that("key_is_valid() returns FALSE for non-keyed data", {
 
 test_that("key_is_valid() detects non-unique keys", {
   df <- key(data.frame(id = c(1, 1, 2), x = 1:3), id, .validate = FALSE)
-  expect_warning(result <- key_is_valid(df), "no longer unique")
-  expect_false(result)
+  expect_false(key_is_valid(df))
 })
 
 test_that("has_key() returns FALSE for plain data frames", {

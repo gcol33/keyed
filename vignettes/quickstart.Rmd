@@ -124,17 +124,23 @@ enriched <- january_clean |>
 has_key(enriched)
 ```
 
-### Graceful degradation
+### Strict enforcement
 
-If an operation breaks uniqueness, keyed warns you rather than failing silently:
+If an operation breaks uniqueness, keyed errors and tells you to use `unkey()` first:
 
-```{r}
-# This creates duplicates - key is dropped with warning
+```{r error=TRUE}
+# This creates duplicates - keyed stops you
 january_clean |>
   mutate(customer_id = 1)
 ```
 
-The warning tells you exactly what happened. No silent corruption.
+To proceed, you must explicitly acknowledge breaking the key:
+
+```{r}
+january_clean |>
+  unkey() |>
+  mutate(customer_id = 1)
+```
 
 ---
 

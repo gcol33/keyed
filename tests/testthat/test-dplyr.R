@@ -29,10 +29,9 @@ test_that("mutate preserves key", {
   expect_equal(get_key_cols(result), "id")
 })
 
-test_that("mutate warns when key becomes non-unique", {
+test_that("mutate errors when key becomes non-unique", {
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  expect_warning(result <- dplyr::mutate(df, id = 1), "no longer unique")
-  expect_false(has_key(result))
+  expect_error(dplyr::mutate(df, id = 1), "no longer unique")
 })
 
 test_that("arrange preserves key", {
@@ -118,12 +117,11 @@ test_that("bind_keyed combines keyed data frames", {
   expect_equal(get_key_cols(result), "id")
 })
 
-test_that("bind_keyed warns on non-unique keys", {
+test_that("bind_keyed errors on non-unique keys", {
   df1 <- key(data.frame(id = 1:2, x = 1:2), id)
   df2 <- key(data.frame(id = 1:2, x = 3:4), id)
 
-  expect_warning(result <- bind_keyed(df1, df2), "not unique")
-  expect_false(has_key(result))
+  expect_error(bind_keyed(df1, df2), "not unique")
 })
 
 test_that("bind_keyed works with unkeyed data", {

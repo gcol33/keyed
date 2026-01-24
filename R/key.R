@@ -108,16 +108,13 @@ key_is_valid <- function(.data) {
 
   # Check columns still exist
   if (!all(key_cols %in% names(.data))) {
-    warn("Key column(s) no longer present in data.")
     return(FALSE)
-
   }
 
   # Check uniqueness
   key_vals <- .data[key_cols]
   n_unique <- vctrs::vec_unique_count(key_vals)
   if (n_unique != nrow(.data)) {
-    warn("Key is no longer unique.")
     return(FALSE)
   }
 
@@ -160,12 +157,14 @@ restore_keyed_df <- function(x, key_cols) {
     return(tibble::as_tibble(x))
   }
 
-  # Check uniqueness (silently return plain tibble if not unique)
+  # Check uniqueness
   key_vals <- x[key_cols]
   n_unique <- vctrs::vec_unique_count(key_vals)
   if (n_unique != nrow(x)) {
-    warn("Key is no longer unique after transformation.")
-    return(tibble::as_tibble(x))
+    abort(c(
+      "Key is no longer unique after transformation.",
+      i = "Use `unkey()` first if you intend to break uniqueness."
+    ))
   }
 
   new_keyed_df(x, key_cols)

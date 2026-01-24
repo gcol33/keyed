@@ -45,29 +45,40 @@ has_key(active_users)
 #> [1] TRUE
 ```
 
-### 3. Get warned if you break it
+### 3. Get stopped if you break it
 
 ```r
 # Base R
 users$user_id <- 1
-#> Warning: Column 'user_id' is no longer unique. Removing key.
+#> Error: Key is no longer unique after transformation.
+#> i Use `unkey()` first if you intend to break uniqueness.
 
 # dplyr
 users |> mutate(user_id = 1)
-#> Warning: Column 'user_id' is no longer unique. Removing key.
+#> Error: Key is no longer unique after transformation.
+#> i Use `unkey()` first if you intend to break uniqueness.
 ```
 
-No silent corruption. You see the problem immediately.
+No silent corruption. You must explicitly acknowledge breaking the key with `unkey()`.
 
 ## Real Example: Monthly Data Imports
 
 ```r
-# Your validation function
+# Base R
+validate_customers <- function(file) {
+  df <- read.csv(file)
+  df <- key(df, customer_id)
+  lock_no_na(df, email)
+  lock_nrow(df, min = 100)
+  df
+}
+
+# dplyr
 validate_customers <- function(file) {
   read.csv(file) |>
-    key(customer_id) |>           # Must be unique
-    lock_no_na(email) |>          # No missing emails
-    lock_nrow(min = 100)          # At least 100 rows
+    key(customer_id) |>
+    lock_no_na(email) |>
+    lock_nrow(min = 100)
 }
 
 # January: clean data, works fine
@@ -76,8 +87,6 @@ jan <- validate_customers("customers_jan.csv")
 # February: upstream bug introduced duplicates
 feb <- validate_customers("customers_feb.csv")
 #> Error: Column 'customer_id' is not unique (12 duplicates)
-
-# You catch the problem before it corrupts your analysis
 ```
 
 ## Join Diagnostics
@@ -96,6 +105,32 @@ diagnose_join(customers, orders, by = "customer_id")
 
 No more surprise row explosions.
 
+## Row UUIDs
+
+Your data has no natural key? Generate one:
+
+```r
+# Add a UUID to each row
+customers <- add_id(customers)
+customers
+#>                .id name
+#> 1 a3f2c8e1b9d04567 Alice
+#> 2 7b1e4a9c2f8d3601 Bob
+#> 3 e9c7b2a1d4f80235 Carol
+
+# UUIDs survive all transformations
+filtered <- customers[customers$name != "Bob", ]
+get_id(filtered)
+#> [1] "a3f2c8e1b9d04567" "e9c7b2a1d4f80235"
+
+# Track what changed between versions
+compare_ids(customers, filtered)
+#> Lost: 1 row (7b1e4a9c2f8d3601)
+#> Kept: 2 rows
+```
+
+UUIDs let you trace rows through your entire pipeline - even after joins, filters, and reshaping.
+
 ## Installation
 
 ```r
@@ -108,11 +143,12 @@ pak::pak("gcol33/keyed")
 | Function | What it does |
 |----------|--------------|
 | `key(df, col)` | Declare primary key (errors if not unique) |
+| `unkey(df)` | Remove key (required before breaking uniqueness) |
 | `has_key(df)` | Check if data has a key |
-| `get_key_cols(df)` | Get key column names |
+| `add_id(df)` | Add UUID to each row |
+| `compare_ids(old, new)` | See which rows were added/removed |
 | `lock_unique(df, col)` | Assert column is unique |
 | `lock_no_na(df, col)` | Assert no missing values |
-| `lock_nrow(df, min, max)` | Assert row count |
 | `diagnose_join(x, y)` | Preview join cardinality |
 
 ## When to Use Something Else

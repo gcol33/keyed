@@ -287,6 +287,7 @@ print.keyed_key_comparison <- function(x, ...) {
 #'
 #' @export
 find_duplicates <- function(.data, ...) {
+
   cols <- key_cols_from_dots(.data, ...)
 
   if (length(cols) == 0) {
@@ -295,6 +296,9 @@ find_duplicates <- function(.data, ...) {
       abort("No columns specified and no key defined.")
     }
   }
+
+  # Work with unkeyed data to avoid errors on duplicate key operations
+  .data <- unkey(.data)
 
   # Count occurrences
   counts <- dplyr::count(.data, dplyr::across(dplyr::all_of(cols)), name = ".n")

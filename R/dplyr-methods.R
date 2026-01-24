@@ -25,8 +25,10 @@ dplyr_reconstruct.keyed_df <- function(data, template) {
     key_vals <- data[key_cols]
     n_unique <- vctrs::vec_unique_count(key_vals)
     if (n_unique != nrow(data)) {
-      # Uniqueness lost - degrade silently
-      return(tibble::as_tibble(data))
+      abort(c(
+        "Key is no longer unique after transformation.",
+        i = "Use `unkey()` first if you intend to break uniqueness."
+      ))
     }
   }
 
@@ -82,8 +84,10 @@ mutate.keyed_df <- function(.data, ...) {
       # Key was modified - validate uniqueness
       n_unique <- vctrs::vec_unique_count(new_keys)
       if (n_unique != nrow(result)) {
-        warn("Key modified and is no longer unique.")
-        return(tibble::as_tibble(result))
+        abort(c(
+          "Key is no longer unique after transformation.",
+          i = "Use `unkey()` first if you intend to break uniqueness."
+        ))
       }
     }
     new_keyed_df(result, key_cols)
@@ -235,8 +239,10 @@ bind_keyed <- function(..., .id = NULL) {
     # Check uniqueness after bind
     n_unique <- vctrs::vec_unique_count(result[key_cols])
     if (n_unique != nrow(result)) {
-      warn("Key is not unique after bind_rows.")
-      return(result)
+      abort(c(
+        "Key is not unique after binding.",
+        i = "Use `unkey()` on inputs first if you intend to break uniqueness."
+      ))
     }
     new_keyed_df(result, key_cols)
   } else {
