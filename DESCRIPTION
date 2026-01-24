@@ -5,6 +5,8 @@ Authors@R:
     person("Gilles", "Colling", email = "gillescolling@gmail.com",
            role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0003-3070-6066"))
+Author: Gilles Colling [aut, cre, cph] (<https://orcid.org/0000-0003-3070-6066>)
+Maintainer: Gilles Colling <gillescolling@gmail.com>
 Language: en-US
 Description: Helps R users make implicit data assumptions explicit by attaching
     keys to flat-file data and warning when those assumptions are violated.

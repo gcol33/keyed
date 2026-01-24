@@ -173,6 +173,7 @@ diagnose_join(customers, orders, by = "customer_id", use_joinspy = FALSE)
 The diagnosis shows:
 
 - **Cardinality is one-to-many**: Each customer can have multiple orders
+
 - **Coverage**: Shows how many keys match vs. don't match
 
 Now you know what to expect. A `left_join()` will create 8 rows (one per order), not 5 (one per customer).
@@ -352,4 +353,5 @@ keyed fills a specific gap: lightweight key tracking for exploratory and semi-st
 ## See Also
 
 - [Design Philosophy](philosophy.html) - The reasoning behind keyed's approach
+
 - [Function Reference](../reference/index.html) - Complete API documentation

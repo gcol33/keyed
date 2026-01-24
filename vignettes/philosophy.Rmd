@@ -22,8 +22,11 @@ library(dplyr)
 
 Most data analysis doesn't happen in databases. It happens with:
 - CSV exports from business systems
+
 - Excel files from collaborators
+
 - Periodic data dumps with no schema
+
 - Multiple versions of "the same" file
 
 In this world, there's no enforced uniqueness constraint, no foreign key validation, no schema migration. The constraints exist only in your head—or in scattered comments that nobody reads.
@@ -52,8 +55,11 @@ This differs from database thinking:
 Why not enforce constraints? Because in flat-file workflows:
 
 1. **Data arrives pre-corrupted** — You can't reject an export you already received
+
 2. **Transformations happen outside your control** — Upstream systems change without notice
+
 3. **R's copy semantics lose attributes** — Metadata can vanish unexpectedly
+
 4. **Session boundaries reset state** — No persistent enforcement possible
 
 Rather than fighting this reality, keyed accepts it. The goal is catching problems when you can still fix them—at import, before joins, during validation—not preventing problems that are already inevitable.
@@ -103,7 +109,9 @@ df |> mutate(id = 1)
 Why warn instead of error?
 
 1. **Legitimate transformations break keys** — Aggregation, cross-joins, reshaping
+
 2. **Debugging is easier** — You see the result + warning, not just an error
+
 3. **Pipelines don't halt unexpectedly** — You control when to enforce strictly
 
 For strict enforcement, use `assume_*()` functions which do error:
@@ -134,9 +142,13 @@ Each would require infrastructure that contradicts the flat-file context. keyed 
 keyed helps you:
 
 1. **Define keys explicitly** — `key(df, col1, col2)`
+
 2. **Check assumptions at boundaries** — `assume_unique()`, `assume_no_na()`
+
 3. **Diagnose joins before problems occur** — `diagnose_join()`
+
 4. **Track row identity** — `add_id()`, `compare_ids()`
+
 5. **Detect drift between versions** — `commit_keyed()`, `check_drift()`
 
 The package warns when assumptions break. It doesn't enforce correctness absolutely. This constraint is intentional—it keeps keyed appropriate for the messy, schema-free world where most data analysis actually happens.

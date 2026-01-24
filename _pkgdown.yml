@@ -1,26 +1,29 @@
 url: https://gcol33.github.io/keyed/
-
 destination: docs
-
 template:
   bootstrap: 5
   bootswatch: sandstone
-  light-switch: true
-
+  light-switch: yes
+  includes:
+    in_header: pkgdown/mathjax-config.html
 home:
-  title: "keyed: Explicit Key Assumptions for Flat-File Workflows"
-  description: >
-    Define and maintain key assumptions in data workflows. Keys survive
-    dplyr transformations, with optional row IDs and drift detection.
-
+  title: 'keyed: Explicit Key Assumptions for Flat-File Workflows'
+  description: |
+    Define and maintain key assumptions in data workflows. Keys survive dplyr transformations, with optional row IDs and drift detection.
 authors:
   Gilles Colling:
     href: https://github.com/gcol33
-
 navbar:
   structure:
-    left:  [intro, reference, articles, news]
-    right: [search, lightswitch, github]
+    left:
+    - intro
+    - reference
+    - articles
+    - news
+    right:
+    - search
+    - lightswitch
+    - github
   components:
     intro:
       text: Get Started
@@ -28,79 +31,70 @@ navbar:
     articles:
       text: Articles
       menu:
-        - text: "Quick Start"
-          href: articles/quickstart.html
-        - text: "Design Philosophy"
-          href: articles/philosophy.html
+      - text: Quick Start
+        href: articles/quickstart.html
+      - text: Design Philosophy
+        href: articles/philosophy.html
     github:
       icon: fab fa-github
       href: https://github.com/gcol33/keyed
       aria-label: GitHub
-
 reference:
-  - title: "Key Definition"
-    desc: "Define and manage keys"
-    contents:
-      - key
-      - unkey
-      - has_key
-      - get_key_cols
-      - key_is_valid
-      - bind_keyed
-
-  - title: "Assumption Checks"
-    desc: "Validate data assumptions"
-    contents:
-      - assume_unique
-      - assume_no_na
-      - assume_complete
-      - assume_coverage
-      - assume_nrow
-
-  - title: "Join Diagnostics"
-    desc: "Analyze joins before executing"
-    contents:
-      - diagnose_join
-
-  - title: "Row Identity"
-    desc: "Stable UUIDs for lineage tracking"
-    contents:
-      - add_id
-      - has_id
-      - get_id
-      - remove_id
-      - extend_id
-      - make_id
-      - bind_id
-      - check_id
-      - check_id_disjoint
-      - compare_ids
-
-  - title: "Drift Detection"
-    desc: "Track changes over time"
-    contents:
-      - commit_keyed
-      - check_drift
-      - clear_snapshot
-      - list_snapshots
-      - clear_all_snapshots
-
-  - title: "Diagnostics"
-    desc: "Inspect and compare data"
-    contents:
-      - key_status
-      - compare_structure
-      - compare_keys
-      - find_duplicates
-      - starts_with("summary")
-
+- title: Key Definition
+  desc: Define and manage keys
+  contents:
+  - key
+  - unkey
+  - has_key
+  - get_key_cols
+  - key_is_valid
+  - bind_keyed
+- title: Assumption Checks
+  desc: Validate data assumptions
+  contents:
+  - assume_unique
+  - assume_no_na
+  - assume_complete
+  - assume_coverage
+  - assume_nrow
+- title: Join Diagnostics
+  desc: Analyze joins before executing
+  contents: diagnose_join
+- title: Row Identity
+  desc: Stable UUIDs for lineage tracking
+  contents:
+  - add_id
+  - has_id
+  - get_id
+  - remove_id
+  - extend_id
+  - make_id
+  - bind_id
+  - check_id
+  - check_id_disjoint
+  - compare_ids
+- title: Drift Detection
+  desc: Track changes over time
+  contents:
+  - commit_keyed
+  - check_drift
+  - clear_snapshot
+  - list_snapshots
+  - clear_all_snapshots
+- title: Diagnostics
+  desc: Inspect and compare data
+  contents:
+  - key_status
+  - compare_structure
+  - compare_keys
+  - find_duplicates
+  - starts_with("summary")
 articles:
-  - title: "Getting Started"
-    navbar: ~
-    contents:
-      - quickstart
-      - philosophy
-
+- title: Getting Started
+  navbar: ~
+  contents:
+  - quickstart
+  - philosophy
 footer:
   structure:
     left: developed_by
