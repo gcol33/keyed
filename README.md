@@ -1,72 +1,100 @@
 # keyed
-
 [![R-CMD-check](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml)
 [![Codecov test coverage](https://codecov.io/gh/gcol33/keyed/graph/badge.svg)](https://app.codecov.io/gh/gcol33/keyed)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Lightweight Uniqueness Tracking for Flat-File Data**
+**Primary keys for data frames.**
 
-Attach keys to data frames, validate uniqueness at creation, and get warnings when transformations break your assumptions. Designed for CSV-first workflows without databases.
+In databases, you declare `customer_id` as a primary key and the database enforces uniqueness. With CSV and Excel files, you get no such guarantees - duplicates slip in silently.
 
-## The Problem
-
-You get monthly CSV or Excel exports. The `customer_id` column should be unique - but one month, someone upstream changes the export logic:
-
-```r
-# Your monthly data pipeline
-customers <- read.csv("customers_march.csv")
-# or: customers <- readxl::read_excel("customers_march.xlsx")
-
-# Looks fine...
-nrow(customers)
-#> [1] 150
-
-# But customer_id has duplicates you didn't notice
-sum(duplicated(customers$customer_id))
-#> [1] 12
-```
-
-You won't discover this until something breaks downstream - wrong totals, duplicate invoices, a failed join. By then, the damage is done.
-
-## The Solution
+keyed brings primary key behavior to R data frames:
 
 ```r
 library(keyed)
 
-# Declare your assumption: customer_id is unique
-customers <- read.csv("customers_march.csv") |>
+# Declare customer_id as the primary key (must be unique)
+customers <- read.csv("customers.csv") |>
   key(customer_id)
-#> Error: Column 'customer_id' is not unique (12 duplicates)
 ```
 
-The error catches the problem **at import**, not downstream.
+If `customer_id` has duplicates, you get an error immediately - not after your analysis is corrupted.
+
+## How It Works
+
+### 1. Define a key (like a primary key)
 
 ```r
-# Clean data works fine
-customers <- read.csv("customers_feb.csv") |>
-  key(customer_id)
+# Single column key
+users <- key(users, user_id)
 
-# Keys survive dplyr transformations
-active <- customers |> filter(status == "active")
-has_key(active)
-#> [1] TRUE
-
-# Warns if you accidentally break uniqueness
-customers |> mutate(customer_id = 1)
-#> Warning: Column 'customer_id' is no longer unique. Removing key.
+# Composite key (combination must be unique)
+sales <- key(sales, region, date)
 ```
 
-## Statement of Need
+### 2. The key follows your data
 
-Flat-file workflows (CSVs, Excel exports) lack database guarantees. Assumptions like "this column is unique" or "no NAs here" live in comments or your head, breaking silently when upstream data changes.
+```r
+# Base R - key survives subsetting
+active_users <- users[users$status == "active", ]
+has_key(active_users)
+#> [1] TRUE
 
-keyed makes these assumptions explicit:
+# dplyr - key survives filter, mutate, arrange, etc.
+active_users <- users |> filter(status == "active")
+has_key(active_users)
+#> [1] TRUE
+```
 
-- **Attach keys** that persist through transformations
-- **Warn on violations** instead of failing silently or blocking
-- **Diagnose joins** before row counts explode
-- **Track row identity** with stable UUIDs
-- **Detect drift** between data versions
+### 3. Get warned if you break it
+
+```r
+# Base R
+users$user_id <- 1
+#> Warning: Column 'user_id' is no longer unique. Removing key.
+
+# dplyr
+users |> mutate(user_id = 1)
+#> Warning: Column 'user_id' is no longer unique. Removing key.
+```
+
+No silent corruption. You see the problem immediately.
+
+## Real Example: Monthly Data Imports
+
+```r
+# Your validation function
+validate_customers <- function(file) {
+  read.csv(file) |>
+    key(customer_id) |>           # Must be unique
+    lock_no_na(email) |>          # No missing emails
+    lock_nrow(min = 100)          # At least 100 rows
+}
+
+# January: clean data, works fine
+jan <- validate_customers("customers_jan.csv")
+
+# February: upstream bug introduced duplicates
+feb <- validate_customers("customers_feb.csv")
+#> Error: Column 'customer_id' is not unique (12 duplicates)
+
+# You catch the problem before it corrupts your analysis
+```
+
+## Join Diagnostics
+
+Before joining, understand what will happen:
+
+```r
+diagnose_join(customers, orders, by = "customer_id")
+#> ── Join Diagnosis
+#> Cardinality: one-to-many
+#> customers: 1000 rows (unique on customer_id)
+#> orders:    5432 rows (4432 duplicates on customer_id)
+#>
+#> Left join will produce ~5432 rows
+```
+
+No more surprise row explosions.
 
 ## Installation
 
@@ -75,42 +103,17 @@ keyed makes these assumptions explicit:
 pak::pak("gcol33/keyed")
 ```
 
-## Features
+## Quick Reference
 
-### Keys and Assumptions
-
-```r
-key(data, col1, col2)           # Declare unique columns
-lock_unique(data, col)        # Assert uniqueness
-lock_no_na(data, col)         # Assert no missing values
-lock_complete(data, col, expected = c("A", "B"))
-lock_nrow(data, min = 100)    # Assert row count bounds
-```
-
-### Join Diagnostics
-
-```r
-diagnose_join(users, orders, by = "user_id")
-#> Cardinality: one-to-many
-#> x: 1000 rows, unique
-#> y: 5432 rows, 4432 duplicates
-```
-
-### Row Identity
-
-```r
-data <- add_id(data)            # Attach UUIDs
-get_id(filtered_data)           # Retrieve IDs after transformations
-compare_ids(before, after)      # See what rows were lost/gained
-```
-
-### Drift Detection
-
-```r
-data <- commit_keyed(data)      # Save snapshot
-check_drift(data)               # Compare against snapshot
-#> Drift detected: 24 rows added, 3 cells modified
-```
+| Function | What it does |
+|----------|--------------|
+| `key(df, col)` | Declare primary key (errors if not unique) |
+| `has_key(df)` | Check if data has a key |
+| `get_key_cols(df)` | Get key column names |
+| `lock_unique(df, col)` | Assert column is unique |
+| `lock_no_na(df, col)` | Assert no missing values |
+| `lock_nrow(df, min, max)` | Assert row count |
+| `diagnose_join(x, y)` | Preview join cardinality |
 
 ## When to Use Something Else
 
@@ -119,26 +122,15 @@ check_drift(data)               # Compare against snapshot
 | Enforced schema | SQLite, DuckDB |
 | Full data validation | pointblank, validate |
 | Production pipelines | targets |
-| Version history | Git |
 
-keyed is for exploratory and semi-structured workflows where heavier tools add friction.
+keyed gives you the primary key validation of a database without needing actual database infrastructure. For exploratory workflows where SQLite is overkill but silent corruption is unacceptable.
 
 ## Documentation
 
-- [Quick Start](https://gillescolling.com/keyed/articles/quickstart.html)
-- [Design Philosophy](https://gillescolling.com/keyed/articles/philosophy.html)
-- [Function Reference](https://gillescolling.com/keyed/reference/index.html)
-
-## Support
-
-> "Software is like sex: it's better when it's free." — Linus Torvalds
-
-I'm a PhD student who builds R packages in my free time because I believe good tools should be free and open. I started these projects for my own work and figured others might find them useful too.
-
-If this package saved you some time, buying me a coffee is a nice way to say thanks. It helps with my coffee addiction.
-
-[![Buy Me A Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/gcol33)
+- [Quick Start](https://gcol33.github.io/keyed/articles/quickstart.html)
+- [Design Philosophy](https://gcol33.github.io/keyed/articles/philosophy.html)
+- [Function Reference](https://gcol33.github.io/keyed/reference/index.html)
 
 ## License
 
-MIT (see the LICENSE.md file)
+MIT
