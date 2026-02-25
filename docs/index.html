@@ -84,33 +84,37 @@
 </h1></div>
 <p><a href="https://CRAN.R-project.org/package=keyed" class="external-link"><img src="https://www.r-pkg.org/badges/version/keyed" alt="CRAN status"></a> <a href="https://cran.r-project.org/package=keyed" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/keyed" alt="CRAN downloads"></a> <a href="https://cran.r-project.org/package=keyed" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/keyed" alt="Monthly downloads"></a> <a href="https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://app.codecov.io/gh/gcol33/keyed" class="external-link"><img src="https://codecov.io/gh/gcol33/keyed/graph/badge.svg" alt="Codecov test coverage"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
 <p><strong>Explicit Key Assumptions for Flat-File Data</strong></p>
-<p>The <code>keyed</code> package brings database-style primary key protections to R data frames. Declare which columns must be unique, and <code>keyed</code> enforces that constraint through filters, joins, and mutations — erroring immediately when assumptions break instead of failing silently downstream.</p>
+<p>The <code>keyed</code> package brings database-style primary key protections to R data frames. Declare which columns must be unique, and <code>keyed</code> enforces that constraint through filters, joins, and mutations. When assumptions break, it errors immediately instead of failing silently downstream.</p>
 <div class="section level2">
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/gcol33/keyed" class="external-link">keyed</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Declare a primary key — errors if not unique</span></span>
-<span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"customers.csv"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="va">customer_id</span><span class="op">)</span></span>
+<span><span class="co"># Declare a primary key (errors if not unique)</span></span>
+<span><span class="va">orders</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  order_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">4</span>,</span>
+<span>  item     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"apple"</span>, <span class="st">"bread"</span>, <span class="st">"apple"</span>, <span class="st">"cheese"</span><span class="op">)</span>,</span>
+<span>  qty      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">orders</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="va">orders</span>, <span class="va">order_id</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Key persists through transformations</span></span>
-<span><span class="va">active</span> <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"active"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/has_key.html">has_key</a></span><span class="op">(</span><span class="va">active</span><span class="op">)</span></span>
+<span><span class="co"># Key persists through dplyr</span></span>
+<span><span class="va">orders</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">qty</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/has_key.html">has_key</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span></span>
 <span><span class="co"># Watch for automatic drift detection</span></span>
-<span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/watch.html">watch</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">modified</span>  <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>score <span class="op">=</span> <span class="va">score</span> <span class="op">+</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">orders</span> <span class="op">&lt;-</span> <span class="va">orders</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/watch.html">watch</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">modified</span> <span class="op">&lt;-</span> <span class="va">orders</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>qty <span class="op">=</span> <span class="va">qty</span> <span class="op">*</span> <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">modified</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Drift detected</span></span>
-<span><span class="co">#&gt; Modified: 3 row(s)</span></span>
-<span><span class="co">#&gt;   score: 3 change(s)</span></span></code></pre></div>
+<span><span class="co">#&gt; Modified: 4 row(s)</span></span>
+<span><span class="co">#&gt;   qty: 4 change(s)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="statement-of-need">Statement of Need<a class="anchor" aria-label="anchor" href="#statement-of-need"></a>
 </h2>
-<p>In databases, you declare <code>customer_id</code> as a primary key and the engine enforces uniqueness. With CSV and Excel files, you get no such guarantees — duplicates slip in silently, joins produce unexpected row counts, and data assumptions are implicit.</p>
+<p>In databases, you declare <code>customer_id</code> as a primary key and the engine enforces uniqueness. With CSV and Excel files, you get no such guarantees. Duplicates slip in silently, joins produce unexpected row counts, and data assumptions are implicit.</p>
 <p>Existing validation packages (pointblank, validate) offer comprehensive rule engines but require upfront schema definitions. For analysts working interactively with flat files, this overhead is often too high. The result: assumptions go unchecked, and errors surface far from their source.</p>
 <p><code>keyed</code> addresses this gap with four lightweight mechanisms:</p>
 <table class="table">
@@ -141,7 +145,7 @@
 </tr>
 </tbody>
 </table>
-<p>These features are designed for CSV-first workflows without database infrastructure or version control — where SQLite is overkill but silent corruption is unacceptable.</p>
+<p>These features are designed for CSV-first workflows without database infrastructure or version control, where SQLite is overkill but silent corruption is unacceptable.</p>
 </div>
 <div class="section level2">
 <h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
@@ -179,7 +183,7 @@
 <div class="section level3">
 <h3 id="locks">Locks<a class="anchor" aria-label="anchor" href="#locks"></a>
 </h3>
-<p>Assert conditions at pipeline checkpoints. Locks error immediately — no silent continuation.</p>
+<p>Assert conditions at pipeline checkpoints. Locks error immediately, never continuing silently.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">customers</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/lock_unique.html">lock_unique</a></span><span class="op">(</span><span class="va">customer_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -233,37 +237,33 @@
 </h3>
 <p><code><a href="reference/watch.html">watch()</a></code> turns drift detection from a manual ceremony into an automatic safety net. Watched data frames auto-snapshot before each dplyr verb, so <code><a href="reference/check_drift.html">check_drift()</a></code> always gives you a cell-level report of what the last transformation changed.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Watch a keyed data frame — stamps a baseline automatically</span></span>
-<span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">customer_id</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/watch.html">watch</a></span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span>, <span class="va">id</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/watch.html">watch</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Every dplyr verb auto-snapshots before executing</span></span>
-<span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"active"</span><span class="op">)</span></span>
+<span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">id</span> <span class="op">&lt;=</span> <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">filtered</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Drift detected</span></span>
-<span><span class="co">#&gt; Removed: 153 row(s)</span></span>
-<span><span class="co">#&gt; Unchanged: 847 row(s)</span></span>
+<span><span class="co">#&gt; Removed: 2 row(s)</span></span>
+<span><span class="co">#&gt; Unchanged: 3 row(s)</span></span>
 <span></span>
-<span><span class="co"># Cell-level detail through a pipe chain</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">filtered</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>score <span class="op">=</span> <span class="va">score</span> <span class="op">+</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="co"># Each step in a chain tracks drift from the previous step</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">filtered</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span> <span class="op">*</span> <span class="fl">100</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Drift detected</span></span>
-<span><span class="co">#&gt; Modified: 847 row(s)</span></span>
-<span><span class="co">#&gt;   score: 847 change(s)</span></span></code></pre></div>
-<p>For manual one-off comparisons, <code><a href="reference/stamp.html">stamp()</a></code> and <code><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff()</a></code> still work directly:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Manual stamp + check</span></span>
-<span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/stamp.html">stamp</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">customers</span><span class="op">$</span><span class="va">score</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">999</span></span>
-<span><span class="fu"><a href="reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">customers</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Cell-level diff between any two keyed data frames</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">old_version</span>, <span class="va">new_version</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Key: customer_id</span></span>
-<span><span class="co">#&gt; Removed: 2 row(s)</span></span>
-<span><span class="co">#&gt; Added: 5 row(s)</span></span>
 <span><span class="co">#&gt; Modified: 3 row(s)</span></span>
-<span><span class="co">#&gt;   email: 2 change(s)</span></span>
-<span><span class="co">#&gt;   segment: 1 change(s)</span></span></code></pre></div>
+<span><span class="co">#&gt;   x: 3 change(s)</span></span></code></pre></div>
+<p>You can also compare any two keyed data frames directly with <code><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff()</a></code>:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">old</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span><span class="op">)</span><span class="op">)</span>, <span class="va">id</span><span class="op">)</span></span>
+<span><span class="va">new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fl">2</span><span class="op">:</span><span class="fl">4</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B"</span>, <span class="st">"c"</span>, <span class="st">"d"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">old</span>, <span class="va">new</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Key: id</span></span>
+<span><span class="co">#&gt; Removed: 1 row(s)</span></span>
+<span><span class="co">#&gt; Added: 1 row(s)</span></span>
+<span><span class="co">#&gt; Modified: 1 row(s)</span></span>
+<span><span class="co">#&gt;   x: 1 change(s)</span></span>
+<span><span class="co">#&gt; Unchanged: 1 row(s)</span></span></code></pre></div>
 <p>Use <code><a href="reference/unwatch.html">unwatch()</a></code> to stop automatic stamping, or <code><a href="reference/clear_all_snapshots.html">clear_all_snapshots()</a></code> to free memory.</p>
 </div>
 </div>

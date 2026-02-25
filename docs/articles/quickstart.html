@@ -350,11 +350,11 @@ identifiers that survive transformations.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># Key:            customer_id | .id</span></span></span>
 <span><span class="co">#&gt;   .id                                  customer_id name  tier  </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> b0205c4d-ac33-4312-adf4-57229a857856           1 Alice gold  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 55395b44-143f-489c-a9a1-e678a20ca355           2 Bob   silver</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 7eee62a4-7c27-4f66-8b0d-4e00cc37c870           3 Carol gold  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> e1f0e024-750a-4b7c-a9c8-c0ec907d314e           4 Dave  bronze</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 7df15b6b-89f6-4bdb-a0a4-68db5d835498           5 Eve   silver</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 376f131c-8e2e-4f51-98f5-894efdb7ff84           1 Alice gold  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> d93e3802-5993-415a-a273-12c2f567f327           2 Bob   silver</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> f5b1899f-8ca0-4b8d-8af5-9d022ef29b1d           3 Carol gold  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> dedf817f-ebc7-48a9-8997-a8b6eb829cb3           4 Dave  bronze</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> b191e75c-66ab-4fe8-a224-542e48b2881f           5 Eve   silver</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="ids-survive-transformations">IDs survive transformations<a class="anchor" aria-label="anchor" href="#ids-survive-transformations"></a>
@@ -365,22 +365,22 @@ identifiers that survive transformations.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">tier</span> <span class="op">==</span> <span class="st">"gold"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_id.html">get_id</a></span><span class="op">(</span><span class="va">gold_customers</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "b0205c4d-ac33-4312-adf4-57229a857856"</span></span>
-<span><span class="co">#&gt; [2] "7eee62a4-7c27-4f66-8b0d-4e00cc37c870"</span></span>
+<span><span class="co">#&gt; [1] "376f131c-8e2e-4f51-98f5-894efdb7ff84"</span></span>
+<span><span class="co">#&gt; [2] "f5b1899f-8ca0-4b8d-8af5-9d022ef29b1d"</span></span>
 <span></span>
 <span><span class="co"># Compare with original</span></span>
 <span><span class="fu"><a href="../reference/compare_ids.html">compare_ids</a></span><span class="op">(</span><span class="va">customers_tracked</span>, <span class="va">gold_customers</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $lost</span></span>
-<span><span class="co">#&gt; [1] "55395b44-143f-489c-a9a1-e678a20ca355"</span></span>
-<span><span class="co">#&gt; [2] "e1f0e024-750a-4b7c-a9c8-c0ec907d314e"</span></span>
-<span><span class="co">#&gt; [3] "7df15b6b-89f6-4bdb-a0a4-68db5d835498"</span></span>
+<span><span class="co">#&gt; [1] "d93e3802-5993-415a-a273-12c2f567f327"</span></span>
+<span><span class="co">#&gt; [2] "dedf817f-ebc7-48a9-8997-a8b6eb829cb3"</span></span>
+<span><span class="co">#&gt; [3] "b191e75c-66ab-4fe8-a224-542e48b2881f"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $gained</span></span>
 <span><span class="co">#&gt; character(0)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $preserved</span></span>
-<span><span class="co">#&gt; [1] "b0205c4d-ac33-4312-adf4-57229a857856"</span></span>
-<span><span class="co">#&gt; [2] "7eee62a4-7c27-4f66-8b0d-4e00cc37c870"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "376f131c-8e2e-4f51-98f5-894efdb7ff84"</span></span>
+<span><span class="co">#&gt; [2] "f5b1899f-8ca0-4b8d-8af5-9d022ef29b1d"</span></span></code></pre></div>
 <p>The comparison shows exactly which rows were lost (filtered out) and
 which were preserved.</p>
 </div>
@@ -397,12 +397,12 @@ conflicts:</p>
 <span><span class="va">combined</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bind_id.html">bind_id</a></span><span class="op">(</span><span class="va">batch1</span>, <span class="va">batch2</span><span class="op">)</span></span>
 <span><span class="va">combined</span></span>
 <span><span class="co">#&gt;                                    .id x</span></span>
-<span><span class="co">#&gt; 1 c020b733-ec58-4225-9c00-590b960fcc0c 1</span></span>
-<span><span class="co">#&gt; 2 552afd83-b857-4843-9435-3f11ef4cd2cf 2</span></span>
-<span><span class="co">#&gt; 3 b3ca2d3d-6cc8-427c-a30f-bf7a5d210e2d 3</span></span>
-<span><span class="co">#&gt; 4 6f974ab9-ad0f-4557-bf84-34e1804a850f 4</span></span>
-<span><span class="co">#&gt; 5 2d3365f6-4957-4756-b837-417b75fbfea7 5</span></span>
-<span><span class="co">#&gt; 6 909a5d02-9d34-4d31-a98f-9f4c30c62db3 6</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 41e257eb-131c-4563-a2f6-f65cfb148221 1</span></span>
+<span><span class="co">#&gt; 2 c8b8e966-8a74-4d30-b2f7-302fdfb64e9c 2</span></span>
+<span><span class="co">#&gt; 3 8457a916-9b1d-4279-b938-1738e214145d 3</span></span>
+<span><span class="co">#&gt; 4 7f29ab85-d11c-4484-be5c-643afc95127a 4</span></span>
+<span><span class="co">#&gt; 5 c306ffe4-f491-4eb9-99fd-fab02811652d 5</span></span>
+<span><span class="co">#&gt; 6 ab2ed585-09c1-417e-b20e-a25f442b29b4 6</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -437,7 +437,7 @@ and check for drift with <code><a href="../reference/check_drift.html">check_dri
 <span><span class="fu"><a href="../reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">reference_data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Drift Report</span></span>
-<span><span class="co">#&gt; Snapshot: 76a76466... (2026-02-25 10:54)</span></span>
+<span><span class="co">#&gt; Snapshot: 76a76466... (2026-02-25 11:14)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> No drift detected</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -452,7 +452,7 @@ and check for drift with <code><a href="../reference/check_drift.html">check_dri
 <span><span class="fu"><a href="../reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">modified_data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Drift Report</span></span>
-<span><span class="co">#&gt; Snapshot: 76a76466... (2026-02-25 10:54)</span></span>
+<span><span class="co">#&gt; Snapshot: 76a76466... (2026-02-25 11:14)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Drift detected</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Value Diff</span></span>
