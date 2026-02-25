@@ -68,9 +68,8 @@ source.
 | **UUIDs** | Track row identity through filters, joins, and reshaping |
 | **Watch & Diff** | Auto-snapshot before each transformation, cell-level drift reports |
 
-These features are designed for CSV-first workflows without database
-infrastructure or version control, where SQLite is overkill but silent
-corruption is unacceptable.
+All four work directly on data frames with no external dependencies, so
+you get key safety without leaving R.
 
 ## Features
 
