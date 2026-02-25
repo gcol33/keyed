@@ -9,14 +9,14 @@
 
 **Explicit Key Assumptions for Flat-File Data**
 
-The `keyed` package brings database-style primary key protections to R data frames. Declare which columns must be unique, and `keyed` enforces that constraint through filters, joins, and mutations — erroring immediately when assumptions break instead of failing silently downstream.
+The `keyed` package brings database-style primary key protections to R data frames. Declare which columns must be unique, and `keyed` enforces that constraint through filters, joins, and mutations. When assumptions break, it errors immediately instead of failing silently downstream.
 
 ## Quick Start
 
 ```r
 library(keyed)
 
-# Declare a primary key — errors if not unique
+# Declare a primary key (errors if not unique)
 orders <- data.frame(
   order_id = 1:4,
   item     = c("apple", "bread", "apple", "cheese"),
@@ -39,7 +39,7 @@ check_drift(modified)
 
 ## Statement of Need
 
-In databases, you declare `customer_id` as a primary key and the engine enforces uniqueness. With CSV and Excel files, you get no such guarantees — duplicates slip in silently, joins produce unexpected row counts, and data assumptions are implicit.
+In databases, you declare `customer_id` as a primary key and the engine enforces uniqueness. With CSV and Excel files, you get no such guarantees. Duplicates slip in silently, joins produce unexpected row counts, and data assumptions are implicit.
 
 Existing validation packages (pointblank, validate) offer comprehensive rule engines but require upfront schema definitions. For analysts working interactively with flat files, this overhead is often too high. The result: assumptions go unchecked, and errors surface far from their source.
 
@@ -52,7 +52,7 @@ Existing validation packages (pointblank, validate) offer comprehensive rule eng
 | **UUIDs** | Track row identity through filters, joins, and reshaping |
 | **Watch & Diff** | Auto-snapshot before each transformation, cell-level drift reports |
 
-These features are designed for CSV-first workflows without database infrastructure or version control — where SQLite is overkill but silent corruption is unacceptable.
+These features are designed for CSV-first workflows without database infrastructure or version control, where SQLite is overkill but silent corruption is unacceptable.
 
 ## Features
 
@@ -90,7 +90,7 @@ diagnose_join(customers, orders, by = "customer_id")
 
 ### Locks
 
-Assert conditions at pipeline checkpoints. Locks error immediately — no silent continuation.
+Assert conditions at pipeline checkpoints. Locks error immediately, never continuing silently.
 
 ```r
 customers |>
