@@ -17,20 +17,24 @@ The `keyed` package brings database-style primary key protections to R data fram
 library(keyed)
 
 # Declare a primary key — errors if not unique
-customers <- read.csv("customers.csv") |> key(customer_id)
+orders <- data.frame(
+  order_id = 1:4,
+  item     = c("apple", "bread", "apple", "cheese"),
+  qty      = c(2, 1, 5, 3)
+)
+orders <- key(orders, order_id)
 
-# Key persists through transformations
-active <- customers |> dplyr::filter(status == "active")
-has_key(active)
+# Key persists through dplyr
+orders |> dplyr::filter(qty > 1) |> has_key()
 #> [1] TRUE
 
 # Watch for automatic drift detection
-customers <- customers |> watch()
-modified  <- customers |> dplyr::mutate(score = score + 10)
+orders <- orders |> watch()
+modified <- orders |> dplyr::mutate(qty = qty * 10)
 check_drift(modified)
 #> Drift detected
-#> Modified: 3 row(s)
-#>   score: 3 change(s)
+#> Modified: 4 row(s)
+#>   qty: 4 change(s)
 ```
 
 ## Statement of Need
@@ -124,40 +128,36 @@ compare_ids(customers, filtered)
 `watch()` turns drift detection from a manual ceremony into an automatic safety net. Watched data frames auto-snapshot before each dplyr verb, so `check_drift()` always gives you a cell-level report of what the last transformation changed.
 
 ```r
-# Watch a keyed data frame — stamps a baseline automatically
-customers <- key(df, customer_id) |> watch()
+df <- key(data.frame(id = 1:5, x = c(1, 2, 3, 4, 5)), id) |> watch()
 
 # Every dplyr verb auto-snapshots before executing
-filtered <- customers |> dplyr::filter(status == "active")
+filtered <- df |> dplyr::filter(id <= 3)
 check_drift(filtered)
 #> Drift detected
-#> Removed: 153 row(s)
-#> Unchanged: 847 row(s)
+#> Removed: 2 row(s)
+#> Unchanged: 3 row(s)
 
-# Cell-level detail through a pipe chain
-result <- filtered |> dplyr::mutate(score = score + 10)
+# Each step in a chain tracks drift from the previous step
+result <- filtered |> dplyr::mutate(x = x * 100)
 check_drift(result)
 #> Drift detected
-#> Modified: 847 row(s)
-#>   score: 847 change(s)
+#> Modified: 3 row(s)
+#>   x: 3 change(s)
 ```
 
-For manual one-off comparisons, `stamp()` and `diff()` still work directly:
+You can also compare any two keyed data frames directly with `diff()`:
 
 ```r
-# Manual stamp + check
-customers <- customers |> stamp()
-customers$score[1] <- 999
-check_drift(customers)
+old <- key(data.frame(id = 1:3, x = c("a", "b", "c")), id)
+new <- data.frame(id = 2:4, x = c("B", "c", "d"))
 
-# Cell-level diff between any two keyed data frames
-diff(old_version, new_version)
-#> Key: customer_id
-#> Removed: 2 row(s)
-#> Added: 5 row(s)
-#> Modified: 3 row(s)
-#>   email: 2 change(s)
-#>   segment: 1 change(s)
+diff(old, new)
+#> Key: id
+#> Removed: 1 row(s)
+#> Added: 1 row(s)
+#> Modified: 1 row(s)
+#>   x: 1 change(s)
+#> Unchanged: 1 row(s)
 ```
 
 Use `unwatch()` to stop automatic stamping, or `clear_all_snapshots()` to free memory.
