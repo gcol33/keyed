@@ -18,11 +18,12 @@ snapshot found.
 }
 \description{
 Compares current data against its committed reference snapshot.
-Returns diagnostic information about changes.
+When both snapshots are keyed with the same key columns, returns a
+cell-level diff. Otherwise falls back to structural comparison.
 }
 \examples{
 df <- key(data.frame(id = 1:3, x = c("a", "b", "c")), id)
-df <- commit_keyed(df)
+df <- stamp(df)
 
 # Modify the data
 df$x[1] <- "modified"

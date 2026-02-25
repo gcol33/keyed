@@ -2,6 +2,8 @@
 "_PACKAGE"
 
 ## usethis namespace: start
+#' @importFrom utils object.size
+#' @importFrom lifecycle deprecated deprecate_warn
 #' @importFrom rlang .data
 #' @importFrom rlang %||%
 #' @importFrom rlang :=

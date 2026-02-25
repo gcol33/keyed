@@ -1,3 +1,46 @@
+# keyed 0.2.0
+
+## New Features
+
+* `stamp()` replaces `commit_keyed()` for snapshot creation. `commit_keyed()`
+  is deprecated with a lifecycle warning.
+
+* `diff()` method for keyed data frames: cell-level comparison using key
+  columns to align rows. Reports added, removed, and modified rows with
+  per-column change detail.
+
+* `watch()` / `unwatch()`: Mark keyed data frames as "watched" so dplyr verbs
+  auto-stamp before executing. Turns drift detection from a manual ceremony
+  into an automatic safety net.
+
+* `check_drift()` now returns cell-level reports. When both the snapshot and
+  current data are keyed with the same key columns, the drift report includes
+  a full `keyed_diff` with per-column change detail. Falls back to structural
+  comparison (row count, columns) when keys differ or are lost.
+
+* `stamp()` gains a `.silent` parameter for suppressing cli output during
+  auto-stamping.
+
+* `list_snapshots()` gains a `size_mb` column showing memory usage per snapshot.
+
+* `compare_structure()`, `compare_keys()`: structural comparison helpers.
+
+## Breaking Changes
+
+* Renamed `commit_keyed()` to `stamp()`. The old name is soft-deprecated.
+
+## Internal Changes
+
+* Snapshot cache now stores full data frames (not just hashes), enabling
+  cell-level drift comparison without re-reading source data.
+
+* Cache reduced from 100 to 20 entries and adds a 100 MB soft memory cap.
+  Eviction remains LRU-based but now considers both count and memory.
+
+* All dplyr methods (`filter`, `mutate`, `select`, `arrange`, `rename`,
+  `summarise`, `slice`, `distinct`, `group_by`, `ungroup`) now propagate
+  snapshot references and watched state through transformations.
+
 # keyed 0.1.1
 
 ## Breaking Changes

@@ -7,7 +7,7 @@
 list_snapshots()
 }
 \value{
-Data frame with snapshot information.
+Data frame with snapshot information, including \code{size_mb}.
 }
 \description{
 List all snapshots in cache

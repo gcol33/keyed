@@ -61,7 +61,7 @@ test_that("key_status() detects row IDs", {
 
 test_that("key_status() detects snapshots", {
   df <- key(data.frame(id = 1:3, x = c("a", "b", "c")), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
   status <- key_status(df)
 
   expect_true(status$has_snapshot)

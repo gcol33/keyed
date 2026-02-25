@@ -1,10 +1,10 @@
-test_that("commit_keyed creates snapshot", {
+test_that("stamp creates snapshot", {
   df <- key(data.frame(id = 1:3, x = 1:3), id)
 
   # Clear any existing snapshots
   keyed:::clear_all_snapshots(confirm = FALSE)
 
-  result <- commit_keyed(df)
+  result <- stamp(df)
 
   expect_true(!is.null(attr(result, "keyed_snapshot_ref")))
   expect_equal(nrow(list_snapshots()), 1)
@@ -14,7 +14,7 @@ test_that("check_drift detects no change", {
   df <- key(data.frame(id = 1:3, x = 1:3), id)
   keyed:::clear_all_snapshots(confirm = FALSE)
 
-  df <- commit_keyed(df)
+  df <- stamp(df)
   report <- check_drift(df)
 
   expect_false(report$has_drift)
@@ -24,7 +24,7 @@ test_that("check_drift detects content changes", {
   df <- key(data.frame(id = 1:3, x = 1:3), id)
   keyed:::clear_all_snapshots(confirm = FALSE)
 
-  df <- commit_keyed(df)
+  df <- stamp(df)
   df$x[1] <- 999
   report <- check_drift(df)
 
@@ -36,7 +36,7 @@ test_that("check_drift detects row count changes", {
   df <- key(data.frame(id = 1:3, x = 1:3), id)
   keyed:::clear_all_snapshots(confirm = FALSE)
 
-  df <- commit_keyed(df)
+  df <- stamp(df)
   df <- df[1:2, ]
   report <- check_drift(df)
 
@@ -50,7 +50,7 @@ test_that("check_drift detects column changes", {
   df <- key(data.frame(id = 1:3, x = 1:3), id)
   keyed:::clear_all_snapshots(confirm = FALSE)
 
-  df <- commit_keyed(df)
+  df <- stamp(df)
   df$y <- 4:6
   report <- check_drift(df)
 
@@ -62,7 +62,7 @@ test_that("clear_snapshot removes reference", {
   df <- key(data.frame(id = 1:3, x = 1:3), id)
   keyed:::clear_all_snapshots(confirm = FALSE)
 
-  df <- commit_keyed(df)
+  df <- stamp(df)
   df <- clear_snapshot(df)
 
   expect_null(attr(df, "keyed_snapshot_ref"))
@@ -86,7 +86,7 @@ test_that("list_snapshots returns snapshot info", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  commit_keyed(df, name = "test_snap")
+  stamp(df, name = "test_snap")
 
   result <- list_snapshots()
   expect_equal(nrow(result), 1)
@@ -101,7 +101,7 @@ test_that("clear_all_snapshots with empty cache", {
 test_that("clear_all_snapshots shows warning with confirm", {
   keyed:::clear_all_snapshots(confirm = FALSE)
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  commit_keyed(df)
+  stamp(df)
 
   expect_message(clear_all_snapshots(confirm = TRUE), "remove")
 })
@@ -110,7 +110,7 @@ test_that("clear_snapshot with purge removes from cache", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
   ref <- attr(df, "keyed_snapshot_ref")
 
   df <- clear_snapshot(df, purge = TRUE)
@@ -121,7 +121,7 @@ test_that("check_drift warns when snapshot not in cache", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
 
   # Manually clear cache to simulate eviction
   keyed:::clear_all_snapshots(confirm = FALSE)
@@ -134,7 +134,7 @@ test_that("print.keyed_drift_report shows no drift", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
   report <- check_drift(df)
 
   expect_false(report$has_drift)
@@ -145,7 +145,7 @@ test_that("print.keyed_drift_report shows drift details", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
   df$x[1] <- 999
   df$y <- 4:6
   report <- check_drift(df)
@@ -159,7 +159,7 @@ test_that("print.keyed_drift_report shows row changes", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
   ref <- attr(df, "keyed_snapshot_ref")
 
   # Add a row manually to preserve snapshot ref
@@ -176,7 +176,7 @@ test_that("print.keyed_drift_report shows column removal", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3, y = 4:6), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
   df$y <- NULL
   report <- check_drift(df)
 
@@ -188,7 +188,7 @@ test_that("print.keyed_drift_report shows key loss", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
   df <- unkey(df)
   report <- check_drift(df)
 
@@ -200,7 +200,7 @@ test_that("print.keyed_drift_report shows cell value changes", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
   df$x[1] <- 999
   report <- check_drift(df)
 
@@ -210,11 +210,11 @@ test_that("print.keyed_drift_report shows cell value changes", {
   expect_equal(length(report$cols_added), 0)
 })
 
-test_that("commit_keyed with name parameter", {
+test_that("stamp with name parameter", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  df <- commit_keyed(df, name = "my_snapshot")
+  df <- stamp(df, name = "my_snapshot")
 
   snaps <- list_snapshots()
   expect_equal(snaps$name, "my_snapshot")
@@ -224,9 +224,87 @@ test_that("check_drift detects key value changes", {
   keyed:::clear_all_snapshots(confirm = FALSE)
 
   df <- key(data.frame(id = 1:3, x = 1:3), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
   df$id[1] <- 10
   report <- check_drift(df)
 
   expect_true(report$key_values_changed)
+})
+
+test_that("commit_keyed() is deprecated in favour of stamp()", {
+  keyed:::clear_all_snapshots(confirm = FALSE)
+
+  df <- key(data.frame(id = 1:3, x = 1:3), id)
+  lifecycle::expect_deprecated(
+    result <- commit_keyed(df)
+  )
+  expect_true(!is.null(attr(result, "keyed_snapshot_ref")))
+})
+
+# New tests for data-storing snapshots -----------------------------------------
+
+test_that("stamp stores actual data in snapshot", {
+  keyed:::clear_all_snapshots(confirm = FALSE)
+
+  df <- key(data.frame(id = 1:3, x = c("a", "b", "c")), id)
+  result <- stamp(df)
+  ref <- attr(result, "keyed_snapshot_ref")
+  snap <- keyed:::get_snapshot(ref)
+
+  expect_true(!is.null(snap$data))
+  expect_identical(snap$data, df)
+  expect_true(snap$data_size > 0)
+})
+
+test_that("check_drift returns cell-level diff when keyed", {
+  keyed:::clear_all_snapshots(confirm = FALSE)
+
+  df <- key(data.frame(id = 1:3, x = c("a", "b", "c")), id)
+  df <- stamp(df)
+  df$x[2] <- "B"
+  report <- check_drift(df)
+
+  expect_true(report$has_drift)
+  expect_s3_class(report$diff, "keyed_diff")
+  expect_equal(report$diff$n_modified, 1)
+  expect_equal(report$diff$changes$x$old, "b")
+  expect_equal(report$diff$changes$x$new, "B")
+})
+
+test_that("check_drift falls back to structural when key lost", {
+  keyed:::clear_all_snapshots(confirm = FALSE)
+
+  df <- key(data.frame(id = 1:3, x = 1:3), id)
+  df <- stamp(df)
+  df <- unkey(df)
+  df$x[1] <- 999
+  report <- check_drift(df)
+
+  expect_true(report$has_drift)
+  expect_null(report$diff)
+  expect_true(report$key_lost)
+  expect_true(report$content_changed)
+})
+
+test_that(".silent suppresses stamp output", {
+  keyed:::clear_all_snapshots(confirm = FALSE)
+
+  df <- key(data.frame(id = 1:3, x = 1:3), id)
+
+  # .silent = TRUE should produce no message
+  expect_no_message(stamp(df, .silent = TRUE))
+
+  # Default should produce a message
+  expect_message(stamp(df), "Snapshot committed")
+})
+
+test_that("list_snapshots includes size_mb column", {
+  keyed:::clear_all_snapshots(confirm = FALSE)
+
+  df <- key(data.frame(id = 1:3, x = 1:3), id)
+  stamp(df)
+
+  result <- list_snapshots()
+  expect_true("size_mb" %in% names(result))
+  expect_true(result$size_mb[1] > 0)
 })

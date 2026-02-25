@@ -9,6 +9,9 @@ clear_all_snapshots(confirm = TRUE)
 \arguments{
 \item{confirm}{If TRUE, require confirmation.}
 }
+\value{
+No return value, called for side effects.
+}
 \description{
 Clear all snapshots from cache
 }

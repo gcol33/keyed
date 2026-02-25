@@ -1,4 +1,4 @@
-url: https://gcol33.github.io/keyed/
+url: https://gillescolling.com/keyed/
 destination: docs
 template:
   bootstrap: 5
@@ -9,7 +9,7 @@ template:
 home:
   title: 'keyed: Explicit Key Assumptions for Flat-File Workflows'
   description: |
-    Define and maintain key assumptions in data workflows. Keys survive dplyr transformations, with optional row IDs and drift detection.
+    Define and maintain key assumptions in data workflows. Keys survive dplyr transformations, with row IDs, automatic drift detection via watch(), and cell-level diffs.
 authors:
   Gilles Colling:
     href: https://github.com/gcol33
@@ -76,8 +76,11 @@ reference:
 - title: Drift Detection
   desc: Track changes over time
   contents:
-  - commit_keyed
+  - stamp
   - check_drift
+  - watch
+  - unwatch
+  - diff.keyed_df
   - clear_snapshot
   - list_snapshots
   - clear_all_snapshots

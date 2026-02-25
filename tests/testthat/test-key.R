@@ -160,7 +160,7 @@ test_that("summary.keyed_df() handles ID issues", {
 
 test_that("summary.keyed_df() handles snapshot", {
   df <- key(data.frame(id = 1:3, x = c("a", "b", "c")), id)
-  df <- commit_keyed(df)
+  df <- stamp(df)
   result <- summary(df)
   expect_equal(result$nrow, 3)
 })

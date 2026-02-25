@@ -247,7 +247,7 @@ combined
 
 **Challenge**: Reference data (lookup tables, dimension tables) changes upstream without notice. Your pipeline silently uses stale assumptions.
 
-**Strategy**: Commit snapshots with `commit_keyed()` and check for drift with `check_drift()`.
+**Strategy**: Commit snapshots with `stamp()` and check for drift with `check_drift()`.
 
 ### Commit a reference snapshot
 
@@ -258,7 +258,7 @@ reference_data <- data.frame(
   tax_rate = c(0.08, 0.20, 0.10)
 ) |>
   key(region_id) |>
-  commit_keyed()
+  stamp()
 ```
 
 ### Check for drift
@@ -280,6 +280,24 @@ check_drift(modified_data)
 ```
 
 The drift report shows exactly what changed, letting you decide whether to accept the new data or investigate.
+
+### Row-level diff
+
+For detailed cell-level comparison, use `diff()` on two keyed data frames:
+
+```{r}
+old_rates <- key(data.frame(
+  region_id = c("US", "EU", "APAC"),
+  tax_rate  = c(0.08, 0.20, 0.10)
+), region_id)
+
+new_rates <- data.frame(
+  region_id = c("US", "EU", "APAC", "LATAM"),
+  tax_rate  = c(0.08, 0.21, 0.10, 0.15)
+)
+
+diff(old_rates, new_rates)
+```
 
 ### Cleanup
 
@@ -334,8 +352,9 @@ clear_all_snapshots()
 
 | Function | Purpose |
 |----------|---------|
-| `commit_keyed()` | Save reference snapshot |
+| `stamp()` | Save reference snapshot |
 | `check_drift()` | Compare against snapshot |
+| `diff()` | Cell-level comparison of two data frames |
 | `list_snapshots()` | View saved snapshots |
 | `clear_snapshot()` | Remove specific snapshot |
 
@@ -360,4 +379,4 @@ keyed fills a specific gap: lightweight key tracking for exploratory and semi-st
 
 - [Design Philosophy](philosophy.html) - The reasoning behind keyed's approach
 
-- [Function Reference](../reference/index.html) - Complete API documentation
+- [Function Reference](https://gillescolling.com/keyed/reference/index.html) - Complete API documentation

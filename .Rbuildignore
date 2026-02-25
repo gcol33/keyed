@@ -10,3 +10,8 @@
 ^CONTRIBUTING\.md$
 ^cran-comments\.md$
 ^nul$
+^doc$
+^Meta$
+^cookies\.txt$
+^keyed_.*\.tar\.gz$
+^deprecated\.md$

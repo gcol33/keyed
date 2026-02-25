@@ -91,7 +91,7 @@ This keeps the package lightweight. You opt into validation where it matters:
 | Key definition | `key()` validates uniqueness |
 | Explicit assertions | `lock_unique()`, `lock_no_na()` |
 | Before joins | `diagnose_join()` |
-| Drift checks | `commit_keyed()` → `check_drift()` |
+| Drift checks | `stamp()` → `check_drift()` |
 
 ## Strict Enforcement
 
@@ -145,6 +145,6 @@ keyed helps you:
 
 4. **Track row identity** — `add_id()`, `compare_ids()`
 
-5. **Detect drift between versions** — `commit_keyed()`, `check_drift()`
+5. **Detect drift between versions** — `stamp()`, `check_drift()`
 
 The package warns when assumptions break. It doesn't enforce correctness absolutely. This constraint is intentional—it keeps keyed appropriate for the messy, schema-free world where most data analysis actually happens.

@@ -4,6 +4,36 @@
 # When preservation isn't possible (e.g., key columns dropped), the result
 # degrades gracefully to a plain tibble with a warning.
 
+
+# Snapshot state helpers -------------------------------------------------------
+
+#' Capture snapshot state before a dplyr verb
+#'
+#' Auto-stamps if the data is watched, then captures the snapshot reference
+#' and watched status for restoration after NextMethod().
+#' @noRd
+capture_snapshot_state <- function(.data) {
+  if (is_watched(.data)) .data <- stamp(.data, .silent = TRUE)
+  list(
+    data         = .data,
+    watched      = is_watched(.data),
+    snapshot_ref = attr(.data, "keyed_snapshot_ref")
+  )
+}
+
+#' Restore snapshot/watch attributes on dplyr verb result
+#'
+#' NextMethod() → as_tibble strips custom attributes. This restores them.
+#' @noRd
+apply_snapshot_state <- function(result, state) {
+  if (!is.null(state$snapshot_ref)) {
+    attr(result, "keyed_snapshot_ref") <- state$snapshot_ref
+  }
+  if (state$watched) attr(result, "keyed_watched") <- TRUE
+  result
+}
+
+
 #' @importFrom dplyr dplyr_reconstruct
 #' @export
 dplyr_reconstruct.keyed_df <- function(data, template) {
@@ -38,50 +68,52 @@ dplyr_reconstruct.keyed_df <- function(data, template) {
 #' @importFrom dplyr filter
 #' @export
 filter.keyed_df <- function(.data, ..., .preserve = FALSE) {
+  state <- capture_snapshot_state(.data)
+  .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
-  # filter preserves uniqueness, so just re-attach
   if (all(key_cols %in% names(result))) {
-    new_keyed_df(result, key_cols)
+    result <- new_keyed_df(result, key_cols)
   } else {
-    tibble::as_tibble(result)
+    result <- tibble::as_tibble(result)
   }
+  apply_snapshot_state(result, state)
 }
 
 #' @importFrom dplyr select
 #' @export
 select.keyed_df <- function(.data, ...) {
+  state <- capture_snapshot_state(.data)
+  .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
 
-  # Check if all key columns survived
   if (all(key_cols %in% names(result))) {
-    new_keyed_df(result, key_cols)
+    result <- new_keyed_df(result, key_cols)
   } else {
-    # Key columns were dropped - warn and degrade
     dropped <- setdiff(key_cols, names(result))
     warn(c(
       "Key column(s) removed by select:",
       paste0("- ", dropped)
     ))
-    tibble::as_tibble(result)
+    result <- tibble::as_tibble(result)
   }
+  apply_snapshot_state(result, state)
 }
 
 #' @importFrom dplyr mutate
 #' @export
 mutate.keyed_df <- function(.data, ...) {
+  state <- capture_snapshot_state(.data)
+  .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
 
-  # Check if key columns were modified
   if (all(key_cols %in% names(result))) {
-    # Check if key values changed
     old_keys <- .data[key_cols]
     new_keys <- result[key_cols]
 
     if (!identical(old_keys, new_keys)) {
-      # Key was modified - validate uniqueness
       n_unique <- vctrs::vec_unique_count(new_keys)
       if (n_unique != nrow(result)) {
         abort(c(
@@ -90,27 +122,32 @@ mutate.keyed_df <- function(.data, ...) {
         ))
       }
     }
-    new_keyed_df(result, key_cols)
+    result <- new_keyed_df(result, key_cols)
   } else {
-    tibble::as_tibble(result)
+    result <- tibble::as_tibble(result)
   }
+  apply_snapshot_state(result, state)
 }
 
 #' @importFrom dplyr arrange
 #' @export
 arrange.keyed_df <- function(.data, ..., .by_group = FALSE) {
+  state <- capture_snapshot_state(.data)
+  .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
-  new_keyed_df(result, key_cols)
+  result <- new_keyed_df(result, key_cols)
+  apply_snapshot_state(result, state)
 }
 
 #' @importFrom dplyr rename
 #' @export
 rename.keyed_df <- function(.data, ...) {
+  state <- capture_snapshot_state(.data)
+  .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
 
-  # Update key column names if they were renamed
   dots <- rlang::enquos(...)
   rename_map <- vapply(dots, rlang::as_label, character(1))
   old_names <- names(rename_map)
@@ -125,30 +162,32 @@ rename.keyed_df <- function(.data, ...) {
     }
   }
 
-  new_keyed_df(result, new_key_cols)
+  result <- new_keyed_df(result, new_key_cols)
+  apply_snapshot_state(result, state)
 }
 
 #' @importFrom dplyr summarise summarize
 #' @export
 summarise.keyed_df <- function(.data, ..., .groups = NULL) {
+  state <- capture_snapshot_state(.data)
+  .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
 
-  # summarise typically destroys row identity - degrade to tibble
-  # unless grouping columns match the key exactly
   groups <- dplyr::group_vars(.data)
 
   if (length(groups) > 0 && setequal(groups, key_cols)) {
-    # Grouped by key columns - result may still be keyed
     if (all(key_cols %in% names(result))) {
       n_unique <- vctrs::vec_unique_count(result[key_cols])
       if (n_unique == nrow(result)) {
-        return(new_keyed_df(result, key_cols))
+        result <- new_keyed_df(result, key_cols)
+        return(apply_snapshot_state(result, state))
       }
     }
   }
 
-  tibble::as_tibble(result)
+  result <- tibble::as_tibble(result)
+  apply_snapshot_state(result, state)
 }
 
 #' @export
@@ -157,53 +196,63 @@ summarize.keyed_df <- summarise.keyed_df
 #' @importFrom dplyr slice
 #' @export
 slice.keyed_df <- function(.data, ..., .preserve = FALSE) {
+  state <- capture_snapshot_state(.data)
+  .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
-  # slice preserves uniqueness
-  new_keyed_df(result, key_cols)
+  result <- new_keyed_df(result, key_cols)
+  apply_snapshot_state(result, state)
 }
 
 #' @importFrom dplyr distinct
 #' @export
 distinct.keyed_df <- function(.data, ..., .keep_all = FALSE) {
+  state <- capture_snapshot_state(.data)
+  .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
 
   if (all(key_cols %in% names(result))) {
     n_unique <- vctrs::vec_unique_count(result[key_cols])
     if (n_unique == nrow(result)) {
-      return(new_keyed_df(result, key_cols))
+      result <- new_keyed_df(result, key_cols)
+      return(apply_snapshot_state(result, state))
     }
   }
 
-  tibble::as_tibble(result)
+  result <- tibble::as_tibble(result)
+  apply_snapshot_state(result, state)
 }
 
 #' @importFrom dplyr group_by
 #' @export
 group_by.keyed_df <- function(.data, ..., .add = FALSE, .drop = TRUE) {
+  state <- capture_snapshot_state(.data)
+  .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
 
-  # Preserve keyed_df class alongside grouped_df
   if (all(key_cols %in% names(result))) {
     attr(result, "keyed_cols") <- key_cols
     class(result) <- unique(c("keyed_df", class(result)))
   }
-  result
+  apply_snapshot_state(result, state)
 }
 
 #' @importFrom dplyr ungroup
 #' @export
 ungroup.keyed_df <- function(x, ...) {
+  state <- capture_snapshot_state(x)
+  x <- state$data
   key_cols <- get_key_cols(x)
   result <- NextMethod()
 
   if (all(key_cols %in% names(result))) {
-    new_keyed_df(result, key_cols)
+    result <- new_keyed_df(result, key_cols)
   } else {
-    tibble::as_tibble(result)
+    result <- tibble::as_tibble(result)
   }
+  apply_snapshot_state(result, state)
 }
 
 
