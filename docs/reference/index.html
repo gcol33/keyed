@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">keyed</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -119,35 +119,35 @@
 
       <dl><dt>
 
-          <code><a href="assume_unique.html">assume_unique()</a></code>
+          <code><a href="lock_unique.html">lock_unique()</a></code>
 
         </dt>
         <dd>Assert that columns are unique</dd>
 
         <dt>
 
-          <code><a href="assume_no_na.html">assume_no_na()</a></code>
+          <code><a href="lock_no_na.html">lock_no_na()</a></code>
 
         </dt>
         <dd>Assert that columns have no missing values</dd>
 
         <dt>
 
-          <code><a href="assume_complete.html">assume_complete()</a></code>
+          <code><a href="lock_complete.html">lock_complete()</a></code>
 
         </dt>
         <dd>Assert that data is complete (no missing values anywhere)</dd>
 
         <dt>
 
-          <code><a href="assume_coverage.html">assume_coverage()</a></code>
+          <code><a href="lock_coverage.html">lock_coverage()</a></code>
 
         </dt>
         <dd>Assert minimum coverage of values</dd>
 
         <dt>
 
-          <code><a href="assume_nrow.html">assume_nrow()</a></code>
+          <code><a href="lock_nrow.html">lock_nrow()</a></code>
 
         </dt>
         <dd>Assert row count within expected range</dd>
@@ -258,10 +258,10 @@
 
       <dl><dt>
 
-          <code><a href="commit_keyed.html">commit_keyed()</a></code>
+          <code><a href="stamp.html">stamp()</a></code> <code><a href="stamp.html">commit_keyed()</a></code>
 
         </dt>
-        <dd>Commit a keyed data frame as reference</dd>
+        <dd>Stamp a data frame as reference</dd>
 
         <dt>
 
@@ -269,6 +269,27 @@
 
         </dt>
         <dd>Check for drift from committed snapshot</dd>
+
+        <dt>
+
+          <code><a href="watch.html">watch()</a></code>
+
+        </dt>
+        <dd>Watch a keyed data frame for automatic drift detection</dd>
+
+        <dt>
+
+          <code><a href="unwatch.html">unwatch()</a></code>
+
+        </dt>
+        <dd>Stop watching a keyed data frame</dd>
+
+        <dt>
+
+          <code><a href="diff.keyed_df.html">diff(<i>&lt;keyed_df&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Diff two keyed data frames</dd>
 
         <dt>
 

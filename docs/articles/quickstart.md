@@ -59,7 +59,7 @@ But it will silently corrupt your analysis.
 # Define what you expect: customer_id is unique
 january_keyed <- january |>
   key(customer_id) |>
-  assume_no_na(email)
+  lock_no_na(email)
 
 # This works - January data is clean
 january_keyed
@@ -118,8 +118,8 @@ each import.
 validate_customer_export <- function(df) {
   df |>
     key(customer_id) |>
-    assume_no_na(email) |>
-    assume_nrow(min = 1)
+    lock_no_na(email) |>
+    lock_nrow(min = 1)
 }
 
 # January: passes
@@ -158,17 +158,28 @@ has_key(enriched)
 #> [1] TRUE
 ```
 
-### Graceful degradation
+### Strict enforcement
 
-If an operation breaks uniqueness, keyed warns you rather than failing
-silently:
+If an operation breaks uniqueness, keyed errors and tells you to use
+[`unkey()`](https://gillescolling.com/keyed/reference/unkey.md) first:
 
 ``` r
 
-# This creates duplicates - key is dropped with warning
+# This creates duplicates - keyed stops you
 january_clean |>
   mutate(customer_id = 1)
-#> Warning: Key modified and is no longer unique.
+#> Error in `mutate()`:
+#> ! Key is no longer unique after transformation.
+#> ℹ Use `unkey()` first if you intend to break uniqueness.
+```
+
+To proceed, you must explicitly acknowledge breaking the key:
+
+``` r
+
+january_clean |>
+  unkey() |>
+  mutate(customer_id = 1)
 #> # A tibble: 5 × 3
 #>   customer_id email             segment
 #>         <dbl> <chr>             <chr>  
@@ -178,8 +189,6 @@ january_clean |>
 #> 4           1 dave@example.com  basic  
 #> 5           1 eve@example.com   premium
 ```
-
-The warning tells you exactly what happened. No silent corruption.
 
 ------------------------------------------------------------------------
 
@@ -193,7 +202,7 @@ duplicating rows.
 data.
 
 **Strategy**: Use
-[`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md)
+[`diagnose_join()`](https://gillescolling.com/keyed/reference/diagnose_join.md)
 to understand cardinality *before* joining.
 
 ### Create sample data
@@ -233,9 +242,8 @@ The diagnosis shows:
 
 - **Coverage**: Shows how many keys match vs. don’t match
 
-Now you know what to expect. A
-[`left_join()`](https://dplyr.tidyverse.org/reference/mutate-joins.html)
-will create 8 rows (one per order), not 5 (one per customer).
+Now you know what to expect. A `left_join()` will create 8 rows (one per
+order), not 5 (one per customer).
 
 ### Compare key structures
 
@@ -267,7 +275,7 @@ uniqueness properties—essential information before joining.
 of which source rows contributed to your final data.
 
 **Strategy**: Use
-[`add_id()`](https://gcol33.github.io/keyed/reference/add_id.md) to
+[`add_id()`](https://gillescolling.com/keyed/reference/add_id.md) to
 attach stable identifiers that survive transformations.
 
 ### Add row IDs
@@ -283,11 +291,11 @@ customers_tracked
 #> # Key:            customer_id | .id
 #>   .id                                  customer_id name  tier  
 #>   <chr>                                      <int> <chr> <chr> 
-#> 1 7c04f88e-e5bd-4329-a3ba-d4f8f65f9c7a           1 Alice gold  
-#> 2 e0aafb43-0892-43ad-8039-ad8733617c25           2 Bob   silver
-#> 3 8119100f-1e5c-4338-bd15-677017694593           3 Carol gold  
-#> 4 42cfb1b6-1b7c-4e4d-9bb4-4dc35bba61c5           4 Dave  bronze
-#> 5 b8b047db-1474-47b1-a73d-c3bceea59076           5 Eve   silver
+#> 1 b0205c4d-ac33-4312-adf4-57229a857856           1 Alice gold  
+#> 2 55395b44-143f-489c-a9a1-e678a20ca355           2 Bob   silver
+#> 3 7eee62a4-7c27-4f66-8b0d-4e00cc37c870           3 Carol gold  
+#> 4 e1f0e024-750a-4b7c-a9c8-c0ec907d314e           4 Dave  bronze
+#> 5 7df15b6b-89f6-4bdb-a0a4-68db5d835498           5 Eve   silver
 ```
 
 ### IDs survive transformations
@@ -299,22 +307,22 @@ gold_customers <- customers_tracked |>
   filter(tier == "gold")
 
 get_id(gold_customers)
-#> [1] "7c04f88e-e5bd-4329-a3ba-d4f8f65f9c7a"
-#> [2] "8119100f-1e5c-4338-bd15-677017694593"
+#> [1] "b0205c4d-ac33-4312-adf4-57229a857856"
+#> [2] "7eee62a4-7c27-4f66-8b0d-4e00cc37c870"
 
 # Compare with original
 compare_ids(customers_tracked, gold_customers)
 #> $lost
-#> [1] "e0aafb43-0892-43ad-8039-ad8733617c25"
-#> [2] "42cfb1b6-1b7c-4e4d-9bb4-4dc35bba61c5"
-#> [3] "b8b047db-1474-47b1-a73d-c3bceea59076"
+#> [1] "55395b44-143f-489c-a9a1-e678a20ca355"
+#> [2] "e1f0e024-750a-4b7c-a9c8-c0ec907d314e"
+#> [3] "7df15b6b-89f6-4bdb-a0a4-68db5d835498"
 #> 
 #> $gained
 #> character(0)
 #> 
 #> $preserved
-#> [1] "7c04f88e-e5bd-4329-a3ba-d4f8f65f9c7a"
-#> [2] "8119100f-1e5c-4338-bd15-677017694593"
+#> [1] "b0205c4d-ac33-4312-adf4-57229a857856"
+#> [2] "7eee62a4-7c27-4f66-8b0d-4e00cc37c870"
 ```
 
 The comparison shows exactly which rows were lost (filtered out) and
@@ -323,7 +331,7 @@ which were preserved.
 ### Combining data with ID handling
 
 When appending new data,
-[`bind_id()`](https://gcol33.github.io/keyed/reference/bind_id.md)
+[`bind_id()`](https://gillescolling.com/keyed/reference/bind_id.md)
 handles ID conflicts:
 
 ``` r
@@ -335,12 +343,12 @@ batch2 <- data.frame(x = 4:6)  # No IDs yet
 combined <- bind_id(batch1, batch2)
 combined
 #>                                    .id x
-#> 1 e19bac07-f676-4724-b252-b5f1116d5a5a 1
-#> 2 852c2ec5-95f1-439f-a6f9-fb7a31e77e42 2
-#> 3 d4b115d6-6200-4ed1-ad63-c79eb6cfb722 3
-#> 4 6fd72f58-a192-4094-9daa-fd259bcc3f6b 4
-#> 5 6abf5c8c-9846-41ac-bcfc-ba6e94a66eb6 5
-#> 6 7d12d6fc-5807-4f57-a935-10278143c5c9 6
+#> 1 c020b733-ec58-4225-9c00-590b960fcc0c 1
+#> 2 552afd83-b857-4843-9435-3f11ef4cd2cf 2
+#> 3 b3ca2d3d-6cc8-427c-a30f-bf7a5d210e2d 3
+#> 4 6f974ab9-ad0f-4557-bf84-34e1804a850f 4
+#> 5 2d3365f6-4957-4756-b837-417b75fbfea7 5
+#> 6 909a5d02-9d34-4d31-a98f-9f4c30c62db3 6
 ```
 
 ------------------------------------------------------------------------
@@ -353,9 +361,9 @@ combined
 upstream without notice. Your pipeline silently uses stale assumptions.
 
 **Strategy**: Commit snapshots with
-[`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md)
-and check for drift with
-[`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md).
+[`stamp()`](https://gillescolling.com/keyed/reference/stamp.md) and
+check for drift with
+[`check_drift()`](https://gillescolling.com/keyed/reference/check_drift.md).
 
 ### Commit a reference snapshot
 
@@ -367,7 +375,7 @@ reference_data <- data.frame(
   tax_rate = c(0.08, 0.20, 0.10)
 ) |>
   key(region_id) |>
-  commit_keyed()
+  stamp()
 #> ✔ Snapshot committed: 76a76466...
 ```
 
@@ -379,8 +387,8 @@ reference_data <- data.frame(
 check_drift(reference_data)
 #> 
 #> ── Drift Report
+#> Snapshot: 76a76466... (2026-02-25 10:54)
 #> ✔ No drift detected
-#> Snapshot: 76a76466... (2026-01-24 01:27)
 ```
 
 ### Detect changes
@@ -395,14 +403,47 @@ modified_data$tax_rate[2] <- 0.21
 check_drift(modified_data)
 #> 
 #> ── Drift Report
+#> Snapshot: 76a76466... (2026-02-25 10:54)
 #> ! Drift detected
-#> Snapshot: 76a76466... (2026-01-24 01:27)
-#> ℹ Key values changed
-#> ℹ Cell values modified
+#> 
+#> ── Value Diff
+#> Key: region_id
+#> 
+#> ! Modified: 1 row(s)
+#> tax_rate: 1 change(s)
+#> Unchanged: 2 row(s)
 ```
 
 The drift report shows exactly what changed, letting you decide whether
 to accept the new data or investigate.
+
+### Row-level diff
+
+For detailed cell-level comparison, use
+[`diff()`](https://rdrr.io/r/base/diff.html) on two keyed data frames:
+
+``` r
+
+old_rates <- key(data.frame(
+  region_id = c("US", "EU", "APAC"),
+  tax_rate  = c(0.08, 0.20, 0.10)
+), region_id)
+
+new_rates <- data.frame(
+  region_id = c("US", "EU", "APAC", "LATAM"),
+  tax_rate  = c(0.08, 0.21, 0.10, 0.15)
+)
+
+diff(old_rates, new_rates)
+#> 
+#> ── Value Diff
+#> Key: region_id
+#> 
+#> ℹ Added: 1 row(s)
+#> ! Modified: 1 row(s)
+#> tax_rate: 1 change(s)
+#> Unchanged: 2 row(s)
+```
 
 ### Cleanup
 
@@ -422,48 +463,49 @@ clear_all_snapshots()
 
 | Function | Purpose |
 |----|----|
-| [`key()`](https://gcol33.github.io/keyed/reference/key.md) | Define key columns (validates uniqueness) |
-| [`unkey()`](https://gcol33.github.io/keyed/reference/unkey.md) | Remove key |
-| [`has_key()`](https://gcol33.github.io/keyed/reference/has_key.md), [`get_key_cols()`](https://gcol33.github.io/keyed/reference/get_key_cols.md) | Query key status |
+| [`key()`](https://gillescolling.com/keyed/reference/key.md) | Define key columns (validates uniqueness) |
+| [`unkey()`](https://gillescolling.com/keyed/reference/unkey.md) | Remove key |
+| [`has_key()`](https://gillescolling.com/keyed/reference/has_key.md), [`get_key_cols()`](https://gillescolling.com/keyed/reference/get_key_cols.md) | Query key status |
 
 ### Assumption Checks
 
 | Function | Validates |
 |----|----|
-| [`assume_unique()`](https://gcol33.github.io/keyed/reference/assume_unique.md) | No duplicate values |
-| [`assume_no_na()`](https://gcol33.github.io/keyed/reference/assume_no_na.md) | No missing values |
-| [`assume_complete()`](https://gcol33.github.io/keyed/reference/assume_complete.md) | All expected values present |
-| [`assume_coverage()`](https://gcol33.github.io/keyed/reference/assume_coverage.md) | Reference values covered |
-| [`assume_nrow()`](https://gcol33.github.io/keyed/reference/assume_nrow.md) | Row count within bounds |
+| [`lock_unique()`](https://gillescolling.com/keyed/reference/lock_unique.md) | No duplicate values |
+| [`lock_no_na()`](https://gillescolling.com/keyed/reference/lock_no_na.md) | No missing values |
+| [`lock_complete()`](https://gillescolling.com/keyed/reference/lock_complete.md) | All expected values present |
+| [`lock_coverage()`](https://gillescolling.com/keyed/reference/lock_coverage.md) | Reference values covered |
+| [`lock_nrow()`](https://gillescolling.com/keyed/reference/lock_nrow.md) | Row count within bounds |
 
 ### Diagnostics
 
 | Function | Purpose |
 |----|----|
-| [`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md) | Analyze join cardinality |
-| [`compare_keys()`](https://gcol33.github.io/keyed/reference/compare_keys.md) | Compare key structures |
-| [`compare_ids()`](https://gcol33.github.io/keyed/reference/compare_ids.md) | Compare row identities |
-| [`find_duplicates()`](https://gcol33.github.io/keyed/reference/find_duplicates.md) | Find duplicate key values |
-| [`key_status()`](https://gcol33.github.io/keyed/reference/key_status.md) | Quick status summary |
+| [`diagnose_join()`](https://gillescolling.com/keyed/reference/diagnose_join.md) | Analyze join cardinality |
+| [`compare_keys()`](https://gillescolling.com/keyed/reference/compare_keys.md) | Compare key structures |
+| [`compare_ids()`](https://gillescolling.com/keyed/reference/compare_ids.md) | Compare row identities |
+| [`find_duplicates()`](https://gillescolling.com/keyed/reference/find_duplicates.md) | Find duplicate key values |
+| [`key_status()`](https://gillescolling.com/keyed/reference/key_status.md) | Quick status summary |
 
 ### Row Identity
 
 | Function | Purpose |
 |----|----|
-| [`add_id()`](https://gcol33.github.io/keyed/reference/add_id.md) | Add UUID to rows |
-| [`get_id()`](https://gcol33.github.io/keyed/reference/get_id.md) | Retrieve row IDs |
-| [`bind_id()`](https://gcol33.github.io/keyed/reference/bind_id.md) | Combine data with ID handling |
-| [`make_id()`](https://gcol33.github.io/keyed/reference/make_id.md) | Create deterministic IDs from columns |
-| [`check_id()`](https://gcol33.github.io/keyed/reference/check_id.md) | Validate ID integrity |
+| [`add_id()`](https://gillescolling.com/keyed/reference/add_id.md) | Add UUID to rows |
+| [`get_id()`](https://gillescolling.com/keyed/reference/get_id.md) | Retrieve row IDs |
+| [`bind_id()`](https://gillescolling.com/keyed/reference/bind_id.md) | Combine data with ID handling |
+| [`make_id()`](https://gillescolling.com/keyed/reference/make_id.md) | Create deterministic IDs from columns |
+| [`check_id()`](https://gillescolling.com/keyed/reference/check_id.md) | Validate ID integrity |
 
 ### Drift Detection
 
 | Function | Purpose |
 |----|----|
-| [`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md) | Save reference snapshot |
-| [`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md) | Compare against snapshot |
-| [`list_snapshots()`](https://gcol33.github.io/keyed/reference/list_snapshots.md) | View saved snapshots |
-| [`clear_snapshot()`](https://gcol33.github.io/keyed/reference/clear_snapshot.md) | Remove specific snapshot |
+| [`stamp()`](https://gillescolling.com/keyed/reference/stamp.md) | Save reference snapshot |
+| [`check_drift()`](https://gillescolling.com/keyed/reference/check_drift.md) | Compare against snapshot |
+| [`diff()`](https://rdrr.io/r/base/diff.html) | Cell-level comparison of two data frames |
+| [`list_snapshots()`](https://gillescolling.com/keyed/reference/list_snapshots.md) | View saved snapshots |
+| [`clear_snapshot()`](https://gillescolling.com/keyed/reference/clear_snapshot.md) | Remove specific snapshot |
 
 ------------------------------------------------------------------------
 
@@ -487,9 +529,9 @@ semi-structured workflows where heavier tools add friction.
 ## See Also
 
 - [Design
-  Philosophy](https://gcol33.github.io/keyed/articles/philosophy.md) -
+  Philosophy](https://gillescolling.com/keyed/articles/philosophy.md) -
   The reasoning behind keyed’s approach
 
 - [Function
-  Reference](https://gcol33.github.io/keyed/reference/index.md) -
+  Reference](https://gillescolling.com/keyed/reference/index.html) -
   Complete API documentation

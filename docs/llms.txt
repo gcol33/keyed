@@ -1,226 +1,232 @@
 # keyed
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/keyed)](https://CRAN.R-project.org/package=keyed)
+[![CRAN
+downloads](https://cranlogs.r-pkg.org/badges/grand-total/keyed)](https://cran.r-project.org/package=keyed)
+[![Monthly
+downloads](https://cranlogs.r-pkg.org/badges/keyed)](https://cran.r-project.org/package=keyed)
 [![R-CMD-check](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
 coverage](https://codecov.io/gh/gcol33/keyed/graph/badge.svg)](https://app.codecov.io/gh/gcol33/keyed)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Explicit Key Assumptions for Flat-File Data Workflows**
+**Explicit Key Assumptions for Flat-File Data**
 
-The `keyed` package helps you define and maintain key assumptions in
-data workflows where you work with CSVs, Excel files, and other flat
-files without database schemas. Define keys once, validate at creation,
-and get warnings when assumptions break.
+The `keyed` package brings database-style primary key protections to R
+data frames. Declare which columns must be unique, and `keyed` enforces
+that constraint through filters, joins, and mutations — erroring
+immediately when assumptions break instead of failing silently
+downstream.
 
 ## Quick Start
 
 ``` r
 
 library(keyed)
-library(dplyr)
 
-# The problem: assumptions live in comments and break silently
-users <- read.csv("users.csv")
-# user_id should be unique... right?
-# email should never be NA... I think?
+# Declare a primary key — errors if not unique
+customers <- read.csv("customers.csv") |> key(customer_id)
 
-# The solution: make assumptions explicit
-users <- read.csv("users.csv") |>
-  key(user_id) |>
-  assume_unique(user_id) |>
-  assume_no_na(email)
-
-# Keys survive transformations
-active_users <- users |>
-  filter(status == "active") |>
-  mutate(domain = sub(".*@", "", email))
-
-has_key(active_users)
+# Key persists through transformations
+active <- customers |> dplyr::filter(status == "active")
+has_key(active)
 #> [1] TRUE
 
-# Catch issues before they cause problems
-diagnose_join(users, orders, by = "user_id")
-#> ── Join Diagnosis ──
-#> Cardinality: one-to-many
-#> x: 1000 rows, unique
-#> y: 5432 rows, 4432 duplicates
-
-# Track row identity across transformations
-users <- add_id(users)
-filtered <- users |> filter(active)
-get_id(filtered)  # Same IDs as original rows
+# Watch for automatic drift detection
+customers <- customers |> watch()
+modified  <- customers |> dplyr::mutate(score = score + 10)
+check_drift(modified)
+#> Drift detected
+#> Modified: 3 row(s)
+#>   score: 3 change(s)
 ```
 
 ## Statement of Need
 
-Working with flat files (CSVs, Excel exports) often means implicit
-assumptions about data structure: “this column should be unique”, “these
-columns form a composite key”, “there shouldn’t be NAs here”. These
-assumptions live in your head or scattered comments, breaking silently
-when data changes.
+In databases, you declare `customer_id` as a primary key and the engine
+enforces uniqueness. With CSV and Excel files, you get no such
+guarantees — duplicates slip in silently, joins produce unexpected row
+counts, and data assumptions are implicit.
 
-This package addresses this by providing:
+Existing validation packages (pointblank, validate) offer comprehensive
+rule engines but require upfront schema definitions. For analysts
+working interactively with flat files, this overhead is often too high.
+The result: assumptions go unchecked, and errors surface far from their
+source.
 
-- **Explicit key definitions** that travel with the data through
-  transformations
-- **Graceful degradation** — warnings when keys break, not hard failures
-- **Assumption checks** at boundaries (imports, exports, joins) rather
-  than every operation
-- **Optional lineage tracking** with stable row IDs
-- **Drift detection** to catch changes between data versions
+`keyed` addresses this gap with four lightweight mechanisms:
+
+| Feature | What it does |
+|----|----|
+| **Keys** | Declare unique columns, enforced through transformations |
+| **Locks** | Assert conditions (no NAs, row counts, coverage) at pipeline checkpoints |
+| **UUIDs** | Track row identity through filters, joins, and reshaping |
+| **Watch & Diff** | Auto-snapshot before each transformation, cell-level drift reports |
+
+These features are designed for CSV-first workflows without database
+infrastructure or version control — where SQLite is overkill but silent
+corruption is unacceptable.
+
+## Features
+
+### Keys
+
+Declare which columns must be unique. Keys persist through base R and
+dplyr operations, and block any transformation that would break
+uniqueness.
+
+``` r
+
+# Single or composite keys
+customers <- key(customers, customer_id)
+sales     <- key(sales, region, year)
+
+# Keys survive filtering
+active <- customers[customers$status == "active", ]
+has_key(active)
+#> [1] TRUE
+
+# Uniqueness-breaking operations are blocked
+customers |> dplyr::mutate(customer_id = 1)
+#> Error: Key is no longer unique after transformation.
+#> i Use `unkey()` first if you intend to break uniqueness.
+```
+
+### Join Diagnostics
+
+Preview join cardinality before executing:
+
+``` r
+
+diagnose_join(customers, orders, by = "customer_id")
+#> Cardinality: one-to-many
+#> customers: 1000 rows (unique)
+#> orders:    5432 rows (4432 duplicates)
+#> Left join will produce ~5432 rows
+```
+
+### Locks
+
+Assert conditions at pipeline checkpoints. Locks error immediately — no
+silent continuation.
+
+``` r
+
+customers |>
+  lock_unique(customer_id) |>
+  lock_no_na(email) |>
+  lock_nrow(min = 100)
+```
+
+Available locks:
+
+| Function                            | Checks                   |
+|-------------------------------------|--------------------------|
+| `lock_unique(df, col)`              | No duplicate values      |
+| `lock_no_na(df, col)`               | No missing values        |
+| `lock_complete(df)`                 | No NAs in any column     |
+| `lock_coverage(df, threshold, col)` | % non-NA above threshold |
+| `lock_nrow(df, min, max)`           | Row count in range       |
+
+### UUIDs
+
+Generate stable row identifiers when your data has no natural key. UUIDs
+survive all transformations and enable row-level tracking.
+
+``` r
+
+customers <- add_id(customers)
+
+# Track which rows were added or removed
+filtered <- customers |> dplyr::filter(name != "Bob")
+compare_ids(customers, filtered)
+#> Lost: 1 row (7b1e4a9c2f8d3601)
+#> Kept: 2 rows
+```
+
+### Watch & Diff
+
+[`watch()`](https://gillescolling.com/keyed/reference/watch.md) turns
+drift detection from a manual ceremony into an automatic safety net.
+Watched data frames auto-snapshot before each dplyr verb, so
+[`check_drift()`](https://gillescolling.com/keyed/reference/check_drift.md)
+always gives you a cell-level report of what the last transformation
+changed.
+
+``` r
+
+# Watch a keyed data frame — stamps a baseline automatically
+customers <- key(df, customer_id) |> watch()
+
+# Every dplyr verb auto-snapshots before executing
+filtered <- customers |> dplyr::filter(status == "active")
+check_drift(filtered)
+#> Drift detected
+#> Removed: 153 row(s)
+#> Unchanged: 847 row(s)
+
+# Cell-level detail through a pipe chain
+result <- filtered |> dplyr::mutate(score = score + 10)
+check_drift(result)
+#> Drift detected
+#> Modified: 847 row(s)
+#>   score: 847 change(s)
+```
+
+For manual one-off comparisons,
+[`stamp()`](https://gillescolling.com/keyed/reference/stamp.md) and
+[`diff()`](https://rdrr.io/r/base/diff.html) still work directly:
+
+``` r
+
+# Manual stamp + check
+customers <- customers |> stamp()
+customers$score[1] <- 999
+check_drift(customers)
+
+# Cell-level diff between any two keyed data frames
+diff(old_version, new_version)
+#> Key: customer_id
+#> Removed: 2 row(s)
+#> Added: 5 row(s)
+#> Modified: 3 row(s)
+#>   email: 2 change(s)
+#>   segment: 1 change(s)
+```
+
+Use [`unwatch()`](https://gillescolling.com/keyed/reference/unwatch.md)
+to stop automatic stamping, or
+[`clear_all_snapshots()`](https://gillescolling.com/keyed/reference/clear_all_snapshots.md)
+to free memory.
 
 ## Installation
 
 ``` r
 
+# Install from CRAN
+install.packages("keyed")
+
+# Or install development version from GitHub
 # install.packages("pak")
 pak::pak("gcol33/keyed")
 ```
 
-## Features
+## When to Use Something Else
 
-### Key Definition
-
-``` r
-
-# Single key
-users <- key(data, user_id)
-
-# Composite key
-orders <- key(data, customer_id, order_date)
-
-# Check key status
-has_key(users)
-get_key_cols(users)
-key_is_valid(users)
-```
-
-### Assumption Checks
-
-``` r
-
-# Uniqueness
-assume_unique(data, col1, col2)
-
-# Missing values
-assume_no_na(data, required_col)
-
-# Completeness (all expected values present)
-assume_complete(data, category, expected = c("A", "B", "C"))
-
-# Coverage (reference values covered)
-assume_coverage(data, id, reference = ref_data$id)
-
-# Row count
-assume_nrow(data, min = 100, max = 10000)
-```
-
-### Join Diagnostics
-
-``` r
-
-# Analyze join before executing
-diagnose_join(users, orders, by = "user_id")
-#> ── Join Diagnosis ──
-#> Cardinality: one-to-many
-#> x: 1000 rows, unique
-#> y: 5432 rows, 4432 duplicates
-
-# For validated joins, use joinspy
-# pak::pak("gcol33/joinspy")
-```
-
-### Row Identity Tracking
-
-Opt-in stable UUIDs for lineage tracking:
-
-``` r
-
-# Add IDs to rows
-users <- add_id(users)
-
-# IDs persist through transformations
-filtered <- users |> filter(active)
-get_id(filtered)  # Same IDs as original rows
-
-# Combine data with ID handling
-combined <- bind_id(batch1, batch2)  # Checks overlaps, fills missing
-
-# Create deterministic IDs from columns
-sales <- make_id(data, country, year)  # "US|2024"
-
-# Validate ID integrity
-check_id(data)
-check_id_disjoint(data1, data2)
-
-# Compare before/after
-compare_ids(before, after)
-#> $lost: 2 IDs
-#> $gained: 5 IDs
-#> $preserved: 998 IDs
-```
-
-### Drift Detection
-
-``` r
-
-# Commit a reference snapshot
-users <- commit_keyed(users)
-#> ✓ Snapshot committed: a5ab1a98...
-
-# Later, check for changes
-check_drift(users)
-#> ── Drift Report ──
-#> ⚠ Drift detected
-#> ℹ Row count: 1000 -> 1024 (+24)
-#> ℹ Cell values modified
-```
-
-### Diagnostics
-
-``` r
-
-# Quick status check
-key_status(users)
-summary(users)
-
-# Compare keys between datasets
-compare_keys(old_data, new_data)
-
-# Find duplicates
-find_duplicates(data, key_col)
-```
-
-## Philosophy
-
-- **Keys are explicit**: Define once, validate at creation
-- **Warnings over errors**: Alert on violations, don’t block by default
-- **Graceful degradation**: Key metadata survives transformations when
-  possible, drops cleanly when not
-- **Boundary checks**: Validate at joins and exports, not on every
-  operation
-- **No magic**: No hidden state, no sidecar files, no databases
-
-## Enhanced Diagnostics
-
-Install [joinspy](https://github.com/gcol33/joinspy) for richer join
-diagnostics:
-
-``` r
-
-pak::pak("gcol33/joinspy")
-
-# diagnose_join() automatically uses joinspy when available
-diagnose_join(users, orders, by = "user_id")
-#> ── Pre-Join Diagnostic Report ──
-#> ... detailed whitespace, encoding, and match analysis ...
-```
+| Need                 | Better Tool          |
+|----------------------|----------------------|
+| Enforced schema      | SQLite, DuckDB       |
+| Full data validation | pointblank, validate |
+| Production pipelines | targets              |
 
 ## Documentation
 
 - [Quick
   Start](https://gillescolling.com/keyed/articles/quickstart.html)
+- [Design
+  Philosophy](https://gillescolling.com/keyed/articles/philosophy.html)
 - [Function
   Reference](https://gillescolling.com/keyed/reference/index.html)
 
@@ -242,107 +248,126 @@ Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-FFDD00?logo=buymeaco
 
 MIT (see the LICENSE.md file)
 
+## Citation
+
+``` bibtex
+@software{keyed,
+  author = {Colling, Gilles},
+  title = {keyed: Explicit Key Assumptions for Flat-File Data},
+  year = {2025},
+  url = {https://CRAN.R-project.org/package=keyed},
+  doi = {10.32614/CRAN.package.keyed}
+}
+```
+
 # Package index
 
 ## Key Definition
 
 Define and manage keys
 
-- [`key()`](https://gcol33.github.io/keyed/reference/key.md)
-  [`` `key<-`() ``](https://gcol33.github.io/keyed/reference/key.md) :
+- [`key()`](https://gillescolling.com/keyed/reference/key.md)
+  [`` `key<-`() ``](https://gillescolling.com/keyed/reference/key.md) :
   Define a key for a data frame
-- [`unkey()`](https://gcol33.github.io/keyed/reference/unkey.md) :
+- [`unkey()`](https://gillescolling.com/keyed/reference/unkey.md) :
   Remove key from a data frame
-- [`has_key()`](https://gcol33.github.io/keyed/reference/has_key.md) :
+- [`has_key()`](https://gillescolling.com/keyed/reference/has_key.md) :
   Check if data frame has a key
-- [`get_key_cols()`](https://gcol33.github.io/keyed/reference/get_key_cols.md)
+- [`get_key_cols()`](https://gillescolling.com/keyed/reference/get_key_cols.md)
   : Get key column names
-- [`key_is_valid()`](https://gcol33.github.io/keyed/reference/key_is_valid.md)
+- [`key_is_valid()`](https://gillescolling.com/keyed/reference/key_is_valid.md)
   : Check if the key is still valid
-- [`bind_keyed()`](https://gcol33.github.io/keyed/reference/bind_keyed.md)
+- [`bind_keyed()`](https://gillescolling.com/keyed/reference/bind_keyed.md)
   : Bind rows of keyed data frames
 
 ## Assumption Checks
 
 Validate data assumptions
 
-- [`assume_unique()`](https://gcol33.github.io/keyed/reference/assume_unique.md)
+- [`lock_unique()`](https://gillescolling.com/keyed/reference/lock_unique.md)
   : Assert that columns are unique
-- [`assume_no_na()`](https://gcol33.github.io/keyed/reference/assume_no_na.md)
+- [`lock_no_na()`](https://gillescolling.com/keyed/reference/lock_no_na.md)
   : Assert that columns have no missing values
-- [`assume_complete()`](https://gcol33.github.io/keyed/reference/assume_complete.md)
+- [`lock_complete()`](https://gillescolling.com/keyed/reference/lock_complete.md)
   : Assert that data is complete (no missing values anywhere)
-- [`assume_coverage()`](https://gcol33.github.io/keyed/reference/assume_coverage.md)
+- [`lock_coverage()`](https://gillescolling.com/keyed/reference/lock_coverage.md)
   : Assert minimum coverage of values
-- [`assume_nrow()`](https://gcol33.github.io/keyed/reference/assume_nrow.md)
+- [`lock_nrow()`](https://gillescolling.com/keyed/reference/lock_nrow.md)
   : Assert row count within expected range
 
 ## Join Diagnostics
 
 Analyze joins before executing
 
-- [`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md)
+- [`diagnose_join()`](https://gillescolling.com/keyed/reference/diagnose_join.md)
   : Diagnose a join before executing
 
 ## Row Identity
 
 Stable UUIDs for lineage tracking
 
-- [`add_id()`](https://gcol33.github.io/keyed/reference/add_id.md) : Add
-  identity column
-- [`has_id()`](https://gcol33.github.io/keyed/reference/has_id.md) :
+- [`add_id()`](https://gillescolling.com/keyed/reference/add_id.md) :
+  Add identity column
+- [`has_id()`](https://gillescolling.com/keyed/reference/has_id.md) :
   Check if data frame has IDs
-- [`get_id()`](https://gcol33.github.io/keyed/reference/get_id.md) : Get
-  ID column
-- [`remove_id()`](https://gcol33.github.io/keyed/reference/remove_id.md)
+- [`get_id()`](https://gillescolling.com/keyed/reference/get_id.md) :
+  Get ID column
+- [`remove_id()`](https://gillescolling.com/keyed/reference/remove_id.md)
   : Remove ID column
-- [`extend_id()`](https://gcol33.github.io/keyed/reference/extend_id.md)
+- [`extend_id()`](https://gillescolling.com/keyed/reference/extend_id.md)
   : Extend IDs to new rows
-- [`make_id()`](https://gcol33.github.io/keyed/reference/make_id.md) :
+- [`make_id()`](https://gillescolling.com/keyed/reference/make_id.md) :
   Create ID from columns
-- [`bind_id()`](https://gcol33.github.io/keyed/reference/bind_id.md) :
+- [`bind_id()`](https://gillescolling.com/keyed/reference/bind_id.md) :
   Bind data frames with ID handling
-- [`check_id()`](https://gcol33.github.io/keyed/reference/check_id.md) :
-  Check ID integrity
-- [`check_id_disjoint()`](https://gcol33.github.io/keyed/reference/check_id_disjoint.md)
+- [`check_id()`](https://gillescolling.com/keyed/reference/check_id.md)
+  : Check ID integrity
+- [`check_id_disjoint()`](https://gillescolling.com/keyed/reference/check_id_disjoint.md)
   : Check IDs are disjoint across datasets
-- [`compare_ids()`](https://gcol33.github.io/keyed/reference/compare_ids.md)
+- [`compare_ids()`](https://gillescolling.com/keyed/reference/compare_ids.md)
   : Compare IDs between data frames
 
 ## Drift Detection
 
 Track changes over time
 
-- [`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md)
-  : Commit a keyed data frame as reference
-- [`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md)
+- [`stamp()`](https://gillescolling.com/keyed/reference/stamp.md)
+  [`commit_keyed()`](https://gillescolling.com/keyed/reference/stamp.md)
+  : Stamp a data frame as reference
+- [`check_drift()`](https://gillescolling.com/keyed/reference/check_drift.md)
   : Check for drift from committed snapshot
-- [`clear_snapshot()`](https://gcol33.github.io/keyed/reference/clear_snapshot.md)
+- [`watch()`](https://gillescolling.com/keyed/reference/watch.md) :
+  Watch a keyed data frame for automatic drift detection
+- [`unwatch()`](https://gillescolling.com/keyed/reference/unwatch.md) :
+  Stop watching a keyed data frame
+- [`diff(`*`<keyed_df>`*`)`](https://gillescolling.com/keyed/reference/diff.keyed_df.md)
+  : Diff two keyed data frames
+- [`clear_snapshot()`](https://gillescolling.com/keyed/reference/clear_snapshot.md)
   : Clear snapshot for a data frame
-- [`list_snapshots()`](https://gcol33.github.io/keyed/reference/list_snapshots.md)
+- [`list_snapshots()`](https://gillescolling.com/keyed/reference/list_snapshots.md)
   : List all snapshots in cache
-- [`clear_all_snapshots()`](https://gcol33.github.io/keyed/reference/clear_all_snapshots.md)
+- [`clear_all_snapshots()`](https://gillescolling.com/keyed/reference/clear_all_snapshots.md)
   : Clear all snapshots from cache
 
 ## Diagnostics
 
 Inspect and compare data
 
-- [`key_status()`](https://gcol33.github.io/keyed/reference/key_status.md)
+- [`key_status()`](https://gillescolling.com/keyed/reference/key_status.md)
   : Get key status summary
-- [`compare_structure()`](https://gcol33.github.io/keyed/reference/compare_structure.md)
+- [`compare_structure()`](https://gillescolling.com/keyed/reference/compare_structure.md)
   : Compare structure of two data frames
-- [`compare_keys()`](https://gcol33.github.io/keyed/reference/compare_keys.md)
+- [`compare_keys()`](https://gillescolling.com/keyed/reference/compare_keys.md)
   : Compare key values between two data frames
-- [`find_duplicates()`](https://gcol33.github.io/keyed/reference/find_duplicates.md)
+- [`find_duplicates()`](https://gillescolling.com/keyed/reference/find_duplicates.md)
   : Find duplicate keys
-- [`summary(`*`<keyed_df>`*`)`](https://gcol33.github.io/keyed/reference/summary.keyed_df.md)
+- [`summary(`*`<keyed_df>`*`)`](https://gillescolling.com/keyed/reference/summary.keyed_df.md)
   : Summary method for keyed data frames
 
 # Articles
 
 ### Getting Started
 
-- [Quick Start](https://gcol33.github.io/keyed/articles/quickstart.md):
+- [Quick Start](https://gillescolling.com/keyed/articles/quickstart.md):
 - [Design
-  Philosophy](https://gcol33.github.io/keyed/articles/philosophy.md):
+  Philosophy](https://gillescolling.com/keyed/articles/philosophy.md):

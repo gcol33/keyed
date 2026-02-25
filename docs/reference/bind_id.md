@@ -33,7 +33,7 @@ This function:
     [`dplyr::bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html)
 
 3.  Fills missing IDs using
-    [`extend_id()`](https://gcol33.github.io/keyed/reference/extend_id.md)
+    [`extend_id()`](https://gillescolling.com/keyed/reference/extend_id.md)
 
 Use this instead of
 [`dplyr::bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html)

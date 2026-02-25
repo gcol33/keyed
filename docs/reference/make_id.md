@@ -1,8 +1,9 @@
 # Create ID from columns
 
 Creates an ID column by combining values from one or more columns.
-Unlike [`add_id()`](https://gcol33.github.io/keyed/reference/add_id.md),
-this produces deterministic IDs based on column values.
+Unlike
+[`add_id()`](https://gillescolling.com/keyed/reference/add_id.md), this
+produces deterministic IDs based on column values.
 
 ## Usage
 

@@ -1,7 +1,8 @@
 # Check for drift from committed snapshot
 
-Compares current data against its committed reference snapshot. Returns
-diagnostic information about changes.
+Compares current data against its committed reference snapshot. When
+both snapshots are keyed with the same key columns, returns a cell-level
+diff. Otherwise falls back to structural comparison.
 
 ## Usage
 
@@ -29,7 +30,7 @@ found.
 
 ``` r
 df <- key(data.frame(id = 1:3, x = c("a", "b", "c")), id)
-df <- commit_keyed(df)
+df <- stamp(df)
 
 # Modify the data
 df$x[1] <- "modified"

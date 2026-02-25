@@ -10,4 +10,4 @@ list_snapshots()
 
 ## Value
 
-Data frame with snapshot information.
+Data frame with snapshot information, including `size_mb`.

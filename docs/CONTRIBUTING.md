@@ -36,7 +36,7 @@ to uphold this code and maintain a respectful, inclusive environment.
 
 This installation guide is focused on development. For regular
 installation, please see the
-[README](https://gcol33.github.io/keyed/README.md).
+[README](https://gillescolling.com/keyed/README.md).
 
 ### Obtaining the source
 

@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">keyed</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,12 +58,43 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="keyed-020">keyed 0.2.0<a class="anchor" aria-label="anchor" href="#keyed-020"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-2-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
+<ul><li><p><code><a href="../reference/stamp.html">stamp()</a></code> replaces <code><a href="../reference/stamp.html">commit_keyed()</a></code> for snapshot creation. <code><a href="../reference/stamp.html">commit_keyed()</a></code> is deprecated with a lifecycle warning.</p></li>
+<li><p><code><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff()</a></code> method for keyed data frames: cell-level comparison using key columns to align rows. Reports added, removed, and modified rows with per-column change detail.</p></li>
+<li><p><code><a href="../reference/watch.html">watch()</a></code> / <code><a href="../reference/unwatch.html">unwatch()</a></code>: Mark keyed data frames as “watched” so dplyr verbs auto-stamp before executing. Turns drift detection from a manual ceremony into an automatic safety net.</p></li>
+<li><p><code><a href="../reference/check_drift.html">check_drift()</a></code> now returns cell-level reports. When both the snapshot and current data are keyed with the same key columns, the drift report includes a full <code>keyed_diff</code> with per-column change detail. Falls back to structural comparison (row count, columns) when keys differ or are lost.</p></li>
+<li><p><code><a href="../reference/stamp.html">stamp()</a></code> gains a <code>.silent</code> parameter for suppressing cli output during auto-stamping.</p></li>
+<li><p><code><a href="../reference/list_snapshots.html">list_snapshots()</a></code> gains a <code>size_mb</code> column showing memory usage per snapshot.</p></li>
+<li><p><code><a href="../reference/compare_structure.html">compare_structure()</a></code>, <code><a href="../reference/compare_keys.html">compare_keys()</a></code>: structural comparison helpers.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="breaking-changes-0-2-0">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h3>
+<ul><li>Renamed <code><a href="../reference/stamp.html">commit_keyed()</a></code> to <code><a href="../reference/stamp.html">stamp()</a></code>. The old name is soft-deprecated.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-changes-0-2-0">Internal Changes<a class="anchor" aria-label="anchor" href="#internal-changes-0-2-0"></a></h3>
+<ul><li><p>Snapshot cache now stores full data frames (not just hashes), enabling cell-level drift comparison without re-reading source data.</p></li>
+<li><p>Cache reduced from 100 to 20 entries and adds a 100 MB soft memory cap. Eviction remains LRU-based but now considers both count and memory.</p></li>
+<li><p>All dplyr methods (<code>filter</code>, <code>mutate</code>, <code>select</code>, <code>arrange</code>, <code>rename</code>, <code>summarise</code>, <code>slice</code>, <code>distinct</code>, <code>group_by</code>, <code>ungroup</code>) now propagate snapshot references and watched state through transformations.</p></li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.1" id="keyed-011">keyed 0.1.1<a class="anchor" aria-label="anchor" href="#keyed-011"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-0-1-1">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-1-1"></a></h3>
+<ul><li>Operations that break key uniqueness now <strong>error</strong> instead of warning. Previously, keyed would warn and silently remove the key. Now it stops with an error, requiring explicit <code><a href="../reference/unkey.html">unkey()</a></code> to proceed. This prevents silent data corruption.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="improvements-0-1-1">Improvements<a class="anchor" aria-label="anchor" href="#improvements-0-1-1"></a></h3>
 <ul><li>Added Codecov integration for test coverage tracking</li>
-<li>Improved README with problem-solution framing in Quick Start</li>
+<li>Improved README with problem-solution framing and Row UUIDs section</li>
 <li>Added CONTRIBUTING.md with contribution guidelines</li>
 <li>Expanded test suite to 90%+ coverage</li>
+<li>Fixed <code><a href="../reference/find_duplicates.html">find_duplicates()</a></code> to work with keyed data that has duplicates</li>
 </ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="keyed-010">keyed 0.1.0<a class="anchor" aria-label="anchor" href="#keyed-010"></a></h2>
 <div class="section level3">
@@ -75,20 +106,19 @@
 <li>
 <code><a href="../reference/has_key.html">has_key()</a></code> / <code><a href="../reference/get_key_cols.html">get_key_cols()</a></code> / <code><a href="../reference/key_is_valid.html">key_is_valid()</a></code>: Query key status</li>
 <li>Keys survive dplyr transformations (filter, mutate, arrange, etc.)</li>
-<li>Graceful degradation with warnings when key uniqueness breaks</li>
 </ul></div>
 <div class="section level4">
 <h4 id="assumption-checks-0-1-0">Assumption Checks<a class="anchor" aria-label="anchor" href="#assumption-checks-0-1-0"></a></h4>
 <ul><li>
-<code><a href="../reference/assume_unique.html">assume_unique()</a></code>: Verify column uniqueness</li>
+<code><a href="../reference/lock_unique.html">lock_unique()</a></code>: Verify column uniqueness</li>
 <li>
-<code><a href="../reference/assume_no_na.html">assume_no_na()</a></code>: Check for missing values</li>
+<code><a href="../reference/lock_no_na.html">lock_no_na()</a></code>: Check for missing values</li>
 <li>
-<code><a href="../reference/assume_complete.html">assume_complete()</a></code>: Ensure expected values are present</li>
+<code><a href="../reference/lock_complete.html">lock_complete()</a></code>: Ensure expected values are present</li>
 <li>
-<code><a href="../reference/assume_coverage.html">assume_coverage()</a></code>: Validate reference coverage</li>
+<code><a href="../reference/lock_coverage.html">lock_coverage()</a></code>: Validate reference coverage</li>
 <li>
-<code><a href="../reference/assume_nrow.html">assume_nrow()</a></code>: Check row count bounds</li>
+<code><a href="../reference/lock_nrow.html">lock_nrow()</a></code>: Check row count bounds</li>
 </ul></div>
 <div class="section level4">
 <h4 id="join-diagnostics-0-1-0">Join Diagnostics<a class="anchor" aria-label="anchor" href="#join-diagnostics-0-1-0"></a></h4>
@@ -116,7 +146,7 @@
 <div class="section level4">
 <h4 id="drift-detection-0-1-0">Drift Detection<a class="anchor" aria-label="anchor" href="#drift-detection-0-1-0"></a></h4>
 <ul><li>
-<code><a href="../reference/commit_keyed.html">commit_keyed()</a></code>: Commit reference snapshot</li>
+<code><a href="../reference/stamp.html">commit_keyed()</a></code>: Commit reference snapshot</li>
 <li>
 <code><a href="../reference/check_drift.html">check_drift()</a></code>: Detect changes from snapshot</li>
 <li>

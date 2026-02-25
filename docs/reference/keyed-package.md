@@ -1,10 +1,11 @@
 # keyed: Explicit Key Assumptions for Flat-File Data
 
-Helps R users make implicit data assumptions explicit by attaching keys
-to flat-file data and warning when those assumptions are violated.
-Designed for CSV-first workflows without databases, schemas, or version
+Helps make implicit data assumptions explicit by attaching keys to
+flat-file data that error when those assumptions are violated. Designed
+for CSV-first workflows without database infrastructure or version
 control. Provides key definition, assumption checks, join diagnostics,
-and optional drift detection against reference snapshots.
+and automatic drift detection via watched data frames that snapshot
+before each transformation and report cell-level changes.
 
 ## See also
 
@@ -18,5 +19,5 @@ Useful links:
 
 ## Author
 
-**Maintainer**: Gilles Colling <gillescolling@gmail.com>
+**Maintainer**: Gilles Colling <gilles.colling051@gmail.com>
 ([ORCID](https://orcid.org/0000-0003-3070-6066)) \[copyright holder\]

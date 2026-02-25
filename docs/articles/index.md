@@ -2,6 +2,6 @@
 
 ### Getting Started
 
-- [Quick Start](https://gcol33.github.io/keyed/articles/quickstart.md):
+- [Quick Start](https://gillescolling.com/keyed/articles/quickstart.md):
 - [Design
-  Philosophy](https://gcol33.github.io/keyed/articles/philosophy.md):
+  Philosophy](https://gillescolling.com/keyed/articles/philosophy.md):

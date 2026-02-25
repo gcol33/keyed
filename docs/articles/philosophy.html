@@ -35,7 +35,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">keyed</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,7 +46,7 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../articles/quickstart.html">Get Started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item dropdown">
+<li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/quickstart.html">Quick Start</a></li>
@@ -85,7 +85,7 @@
                         <h4 data-toc-skip class="author">Gilles
 Colling</h4>
             
-            <h4 data-toc-skip class="date">2026-01-24</h4>
+            <h4 data-toc-skip class="date">2026-02-25</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/gcol33/keyed/blob/HEAD/vignettes/philosophy.Rmd" class="external-link"><code>vignettes/philosophy.Rmd</code></a></small>
       <div class="d-none name"><code>philosophy.Rmd</code></div>
@@ -175,13 +175,13 @@ inevitable.</p>
 <span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/key.html">key</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">id</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># No check here - just a filter</span></span>
-<span><span class="va">df_filtered</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">id</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">df_filtered</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">id</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># No check here - just adding a column</span></span>
-<span><span class="va">df_enriched</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>upper <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">df_enriched</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu">mutate</span><span class="op">(</span>upper <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Check happens HERE - at explicit assertion</span></span>
-<span><span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/assume_no_na.html">assume_no_na</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/lock_no_na.html">lock_no_na</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span></span></code></pre></div>
 <p>This keeps the package lightweight. You opt into validation where it
 matters:</p>
 <table class="table">
@@ -198,7 +198,7 @@ matters:</p>
 <tr class="even">
 <td>Explicit assertions</td>
 <td>
-<code><a href="../reference/assume_unique.html">assume_unique()</a></code>, <code><a href="../reference/assume_no_na.html">assume_no_na()</a></code>
+<code><a href="../reference/lock_unique.html">lock_unique()</a></code>, <code><a href="../reference/lock_no_na.html">lock_no_na()</a></code>
 </td>
 </tr>
 <tr class="odd">
@@ -208,51 +208,45 @@ matters:</p>
 <tr class="even">
 <td>Drift checks</td>
 <td>
-<code><a href="../reference/commit_keyed.html">commit_keyed()</a></code> → <code><a href="../reference/check_drift.html">check_drift()</a></code>
+<code><a href="../reference/stamp.html">stamp()</a></code> → <code><a href="../reference/check_drift.html">check_drift()</a></code>
 </td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section level2">
-<h2 id="graceful-degradation">Graceful Degradation<a class="anchor" aria-label="anchor" href="#graceful-degradation"></a>
+<h2 id="strict-enforcement">Strict Enforcement<a class="anchor" aria-label="anchor" href="#strict-enforcement"></a>
 </h2>
-<p>When operations break key assumptions, keyed warns rather than
-errors:</p>
+<p>When operations break key assumptions, keyed errors and requires
+explicit acknowledgment:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/key.html">key</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># This would create duplicate ids</span></span>
-<span><span class="co"># Key is dropped with warning, not error</span></span>
-<span><span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Key modified and is no longer unique.</span></span>
+<span><span class="co"># This would create duplicate ids - keyed stops you</span></span>
+<span><span class="va">df</span> <span class="op">|&gt;</span> <span class="fu">mutate</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;"> in `mutate()`:</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Key is no longer unique after transformation.</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> Use `unkey()` first if you intend to break uniqueness.</span></span></code></pre></div>
+<p>To proceed, use <code><a href="../reference/unkey.html">unkey()</a></code> to explicitly acknowledge you’re
+breaking the key:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/unkey.html">unkey</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">mutate</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 2</span></span></span>
 <span><span class="co">#&gt;      id x    </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     1 a    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     1 b    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     1 c</span></span></code></pre></div>
-<p>Why warn instead of error?</p>
+<p>Why error instead of warn?</p>
 <ol style="list-style-type: decimal">
-<li><p><strong>Legitimate transformations break keys</strong> —
-Aggregation, cross-joins, reshaping</p></li>
-<li><p><strong>Debugging is easier</strong> — You see the result +
-warning, not just an error</p></li>
-<li><p><strong>Pipelines don’t halt unexpectedly</strong> — You control
-when to enforce strictly</p></li>
+<li><p><strong>Silent key removal is dangerous</strong> — You might not
+notice the warning</p></li>
+<li><p><strong>Explicit is better than implicit</strong> — If you want
+to break the key, say so</p></li>
+<li><p><strong>Catches mistakes early</strong> — Before they corrupt
+downstream analysis</p></li>
 </ol>
-<p>For strict enforcement, use <code>assume_*()</code> functions which
-do error:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># This WILL error</span></span>
-<span><span class="va">df</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/assume_unique.html">assume_unique</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Key modified and is no longer unique.</span></span>
-<span><span class="co">#&gt; Warning: Uniqueness assumption violated.</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> 2 duplicate value(s) in: id</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> Rows: 3, Unique: 1</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="what-keyed-doesnt-do">What keyed Doesn’t Do<a class="anchor" aria-label="anchor" href="#what-keyed-doesnt-do"></a>
@@ -301,13 +295,13 @@ context. keyed stays minimal by design.</p>
 <li><p><strong>Define keys explicitly</strong> —
 <code>key(df, col1, col2)</code></p></li>
 <li><p><strong>Check assumptions at boundaries</strong> —
-<code><a href="../reference/assume_unique.html">assume_unique()</a></code>, <code><a href="../reference/assume_no_na.html">assume_no_na()</a></code></p></li>
+<code><a href="../reference/lock_unique.html">lock_unique()</a></code>, <code><a href="../reference/lock_no_na.html">lock_no_na()</a></code></p></li>
 <li><p><strong>Diagnose joins before problems occur</strong> —
 <code><a href="../reference/diagnose_join.html">diagnose_join()</a></code></p></li>
 <li><p><strong>Track row identity</strong> — <code><a href="../reference/add_id.html">add_id()</a></code>,
 <code><a href="../reference/compare_ids.html">compare_ids()</a></code></p></li>
 <li><p><strong>Detect drift between versions</strong> —
-<code><a href="../reference/commit_keyed.html">commit_keyed()</a></code>, <code><a href="../reference/check_drift.html">check_drift()</a></code></p></li>
+<code><a href="../reference/stamp.html">stamp()</a></code>, <code><a href="../reference/check_drift.html">check_drift()</a></code></p></li>
 </ol>
 <p>The package warns when assumptions break. It doesn’t enforce
 correctness absolutely. This constraint is intentional—it keeps keyed

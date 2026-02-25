@@ -76,7 +76,7 @@ df_filtered <- df |> filter(id > 1)
 df_enriched <- df |> mutate(upper = toupper(value))
 
 # Check happens HERE - at explicit assertion
-df |> assume_no_na(value)
+df |> lock_no_na(value)
 ```
 
 This keeps the package lightweight. You opt into validation where it
@@ -84,24 +84,35 @@ matters:
 
 | Boundary | Example |
 |----|----|
-| Key definition | [`key()`](https://gcol33.github.io/keyed/reference/key.md) validates uniqueness |
-| Explicit assertions | [`assume_unique()`](https://gcol33.github.io/keyed/reference/assume_unique.md), [`assume_no_na()`](https://gcol33.github.io/keyed/reference/assume_no_na.md) |
-| Before joins | [`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md) |
-| Drift checks | [`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md) → [`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md) |
+| Key definition | [`key()`](https://gillescolling.com/keyed/reference/key.md) validates uniqueness |
+| Explicit assertions | [`lock_unique()`](https://gillescolling.com/keyed/reference/lock_unique.md), [`lock_no_na()`](https://gillescolling.com/keyed/reference/lock_no_na.md) |
+| Before joins | [`diagnose_join()`](https://gillescolling.com/keyed/reference/diagnose_join.md) |
+| Drift checks | [`stamp()`](https://gillescolling.com/keyed/reference/stamp.md) → [`check_drift()`](https://gillescolling.com/keyed/reference/check_drift.md) |
 
-## Graceful Degradation
+## Strict Enforcement
 
-When operations break key assumptions, keyed warns rather than errors:
+When operations break key assumptions, keyed errors and requires
+explicit acknowledgment:
 
 ``` r
 
 df <- data.frame(id = 1:3, x = c("a", "b", "c")) |>
   key(id)
 
-# This would create duplicate ids
-# Key is dropped with warning, not error
+# This would create duplicate ids - keyed stops you
 df |> mutate(id = 1)
-#> Warning: Key modified and is no longer unique.
+#> Error in `mutate()`:
+#> ! Key is no longer unique after transformation.
+#> ℹ Use `unkey()` first if you intend to break uniqueness.
+```
+
+To proceed, use
+[`unkey()`](https://gillescolling.com/keyed/reference/unkey.md) to
+explicitly acknowledge you’re breaking the key:
+
+``` r
+
+df |> unkey() |> mutate(id = 1)
 #> # A tibble: 3 × 2
 #>      id x    
 #>   <dbl> <chr>
@@ -110,30 +121,15 @@ df |> mutate(id = 1)
 #> 3     1 c
 ```
 
-Why warn instead of error?
+Why error instead of warn?
 
-1.  **Legitimate transformations break keys** — Aggregation,
-    cross-joins, reshaping
+1.  **Silent key removal is dangerous** — You might not notice the
+    warning
 
-2.  **Debugging is easier** — You see the result + warning, not just an
-    error
+2.  **Explicit is better than implicit** — If you want to break the key,
+    say so
 
-3.  **Pipelines don’t halt unexpectedly** — You control when to enforce
-    strictly
-
-For strict enforcement, use `assume_*()` functions which do error:
-
-``` r
-
-# This WILL error
-df |>
-  mutate(id = 1) |>
-  assume_unique(id)
-#> Warning: Key modified and is no longer unique.
-#> Warning: Uniqueness assumption violated.
-#> ℹ 2 duplicate value(s) in: id
-#> ℹ Rows: 3, Unique: 1
-```
+3.  **Catches mistakes early** — Before they corrupt downstream analysis
 
 ## What keyed Doesn’t Do
 
@@ -157,19 +153,19 @@ keyed helps you:
 1.  **Define keys explicitly** — `key(df, col1, col2)`
 
 2.  **Check assumptions at boundaries** —
-    [`assume_unique()`](https://gcol33.github.io/keyed/reference/assume_unique.md),
-    [`assume_no_na()`](https://gcol33.github.io/keyed/reference/assume_no_na.md)
+    [`lock_unique()`](https://gillescolling.com/keyed/reference/lock_unique.md),
+    [`lock_no_na()`](https://gillescolling.com/keyed/reference/lock_no_na.md)
 
 3.  **Diagnose joins before problems occur** —
-    [`diagnose_join()`](https://gcol33.github.io/keyed/reference/diagnose_join.md)
+    [`diagnose_join()`](https://gillescolling.com/keyed/reference/diagnose_join.md)
 
 4.  **Track row identity** —
-    [`add_id()`](https://gcol33.github.io/keyed/reference/add_id.md),
-    [`compare_ids()`](https://gcol33.github.io/keyed/reference/compare_ids.md)
+    [`add_id()`](https://gillescolling.com/keyed/reference/add_id.md),
+    [`compare_ids()`](https://gillescolling.com/keyed/reference/compare_ids.md)
 
 5.  **Detect drift between versions** —
-    [`commit_keyed()`](https://gcol33.github.io/keyed/reference/commit_keyed.md),
-    [`check_drift()`](https://gcol33.github.io/keyed/reference/check_drift.md)
+    [`stamp()`](https://gillescolling.com/keyed/reference/stamp.md),
+    [`check_drift()`](https://gillescolling.com/keyed/reference/check_drift.md)
 
 The package warns when assumptions break. It doesn’t enforce correctness
 absolutely. This constraint is intentional—it keeps keyed appropriate

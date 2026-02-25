@@ -12,9 +12,9 @@
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
 <meta property="og:title" content="keyed: Explicit Key Assumptions for Flat-File Workflows">
-<meta name="description" content="Define and maintain key assumptions in data workflows. Keys survive dplyr transformations, with optional row IDs and drift detection.
+<meta name="description" content="Define and maintain key assumptions in data workflows. Keys survive dplyr transformations, with row IDs, automatic drift detection via watch(), and cell-level diffs.
 ">
-<meta property="og:description" content="Define and maintain key assumptions in data workflows. Keys survive dplyr transformations, with optional row IDs and drift detection.
+<meta property="og:description" content="Define and maintain key assumptions in data workflows. Keys survive dplyr transformations, with row IDs, automatic drift detection via watch(), and cell-level diffs.
 ">
 </head>
 <body>
@@ -39,7 +39,7 @@
 
     <a class="navbar-brand me-2" href="index.html">keyed</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,215 +82,233 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="keyed">keyed<a class="anchor" aria-label="anchor" href="#keyed"></a>
 </h1></div>
-<p><a href="https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://app.codecov.io/gh/gcol33/keyed" class="external-link"><img src="https://codecov.io/gh/gcol33/keyed/graph/badge.svg" alt="Codecov test coverage"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
-<p><strong>Explicit Key Assumptions for Flat-File Data Workflows</strong></p>
-<p>The <code>keyed</code> package helps you define and maintain key assumptions in data workflows where you work with CSVs, Excel files, and other flat files without database schemas. Define keys once, validate at creation, and get warnings when assumptions break.</p>
+<p><a href="https://CRAN.R-project.org/package=keyed" class="external-link"><img src="https://www.r-pkg.org/badges/version/keyed" alt="CRAN status"></a> <a href="https://cran.r-project.org/package=keyed" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/keyed" alt="CRAN downloads"></a> <a href="https://cran.r-project.org/package=keyed" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/keyed" alt="Monthly downloads"></a> <a href="https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a> <a href="https://app.codecov.io/gh/gcol33/keyed" class="external-link"><img src="https://codecov.io/gh/gcol33/keyed/graph/badge.svg" alt="Codecov test coverage"></a> <a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
+<p><strong>Explicit Key Assumptions for Flat-File Data</strong></p>
+<p>The <code>keyed</code> package brings database-style primary key protections to R data frames. Declare which columns must be unique, and <code>keyed</code> enforces that constraint through filters, joins, and mutations — erroring immediately when assumptions break instead of failing silently downstream.</p>
 <div class="section level2">
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/gcol33/keyed" class="external-link">keyed</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># The problem: assumptions live in comments and break silently</span></span>
-<span><span class="va">users</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"users.csv"</span><span class="op">)</span></span>
-<span><span class="co"># user_id should be unique... right?</span></span>
-<span><span class="co"># email should never be NA... I think?</span></span>
+<span><span class="co"># Declare a primary key — errors if not unique</span></span>
+<span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"customers.csv"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="va">customer_id</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># The solution: make assumptions explicit</span></span>
-<span><span class="va">users</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"users.csv"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="va">user_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/assume_unique.html">assume_unique</a></span><span class="op">(</span><span class="va">user_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/assume_no_na.html">assume_no_na</a></span><span class="op">(</span><span class="va">email</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Keys survive transformations</span></span>
-<span><span class="va">active_users</span> <span class="op">&lt;-</span> <span class="va">users</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"active"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>domain <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">".*@"</span>, <span class="st">""</span>, <span class="va">email</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/has_key.html">has_key</a></span><span class="op">(</span><span class="va">active_users</span><span class="op">)</span></span>
+<span><span class="co"># Key persists through transformations</span></span>
+<span><span class="va">active</span> <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"active"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/has_key.html">has_key</a></span><span class="op">(</span><span class="va">active</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span></span>
-<span><span class="co"># Catch issues before they cause problems</span></span>
-<span><span class="fu"><a href="reference/diagnose_join.html">diagnose_join</a></span><span class="op">(</span><span class="va">users</span>, <span class="va">orders</span>, by <span class="op">=</span> <span class="st">"user_id"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ── Join Diagnosis ──</span></span>
-<span><span class="co">#&gt; Cardinality: one-to-many</span></span>
-<span><span class="co">#&gt; x: 1000 rows, unique</span></span>
-<span><span class="co">#&gt; y: 5432 rows, 4432 duplicates</span></span>
-<span></span>
-<span><span class="co"># Track row identity across transformations</span></span>
-<span><span class="va">users</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add_id.html">add_id</a></span><span class="op">(</span><span class="va">users</span><span class="op">)</span></span>
-<span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="va">users</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">active</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/get_id.html">get_id</a></span><span class="op">(</span><span class="va">filtered</span><span class="op">)</span>  <span class="co"># Same IDs as original rows</span></span></code></pre></div>
+<span><span class="co"># Watch for automatic drift detection</span></span>
+<span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/watch.html">watch</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">modified</span>  <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>score <span class="op">=</span> <span class="va">score</span> <span class="op">+</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">modified</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Drift detected</span></span>
+<span><span class="co">#&gt; Modified: 3 row(s)</span></span>
+<span><span class="co">#&gt;   score: 3 change(s)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="statement-of-need">Statement of Need<a class="anchor" aria-label="anchor" href="#statement-of-need"></a>
 </h2>
-<p>Working with flat files (CSVs, Excel exports) often means implicit assumptions about data structure: “this column should be unique”, “these columns form a composite key”, “there shouldn’t be NAs here”. These assumptions live in your head or scattered comments, breaking silently when data changes.</p>
-<p>This package addresses this by providing:</p>
-<ul>
-<li>
-<strong>Explicit key definitions</strong> that travel with the data through transformations</li>
-<li>
-<strong>Graceful degradation</strong> — warnings when keys break, not hard failures</li>
-<li>
-<strong>Assumption checks</strong> at boundaries (imports, exports, joins) rather than every operation</li>
-<li>
-<strong>Optional lineage tracking</strong> with stable row IDs</li>
-<li>
-<strong>Drift detection</strong> to catch changes between data versions</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
-</h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
-<span><span class="fu">pak</span><span class="fu">::</span><span class="fu">pak</span><span class="op">(</span><span class="st">"gcol33/keyed"</span><span class="op">)</span></span></code></pre></div>
+<p>In databases, you declare <code>customer_id</code> as a primary key and the engine enforces uniqueness. With CSV and Excel files, you get no such guarantees — duplicates slip in silently, joins produce unexpected row counts, and data assumptions are implicit.</p>
+<p>Existing validation packages (pointblank, validate) offer comprehensive rule engines but require upfront schema definitions. For analysts working interactively with flat files, this overhead is often too high. The result: assumptions go unchecked, and errors surface far from their source.</p>
+<p><code>keyed</code> addresses this gap with four lightweight mechanisms:</p>
+<table class="table">
+<colgroup>
+<col width="39%">
+<col width="60%">
+</colgroup>
+<thead><tr>
+<th>Feature</th>
+<th>What it does</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>Keys</strong></td>
+<td>Declare unique columns, enforced through transformations</td>
+</tr>
+<tr>
+<td><strong>Locks</strong></td>
+<td>Assert conditions (no NAs, row counts, coverage) at pipeline checkpoints</td>
+</tr>
+<tr>
+<td><strong>UUIDs</strong></td>
+<td>Track row identity through filters, joins, and reshaping</td>
+</tr>
+<tr>
+<td><strong>Watch &amp; Diff</strong></td>
+<td>Auto-snapshot before each transformation, cell-level drift reports</td>
+</tr>
+</tbody>
+</table>
+<p>These features are designed for CSV-first workflows without database infrastructure or version control — where SQLite is overkill but silent corruption is unacceptable.</p>
 </div>
 <div class="section level2">
 <h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
 </h2>
 <div class="section level3">
-<h3 id="key-definition">Key Definition<a class="anchor" aria-label="anchor" href="#key-definition"></a>
+<h3 id="keys">Keys<a class="anchor" aria-label="anchor" href="#keys"></a>
 </h3>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Single key</span></span>
-<span><span class="va">users</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">user_id</span><span class="op">)</span></span>
+<p>Declare which columns must be unique. Keys persist through base R and dplyr operations, and block any transformation that would break uniqueness.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Single or composite keys</span></span>
+<span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="va">customers</span>, <span class="va">customer_id</span><span class="op">)</span></span>
+<span><span class="va">sales</span>     <span class="op">&lt;-</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="va">sales</span>, <span class="va">region</span>, <span class="va">year</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Composite key</span></span>
-<span><span class="va">orders</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">customer_id</span>, <span class="va">order_date</span><span class="op">)</span></span>
+<span><span class="co"># Keys survive filtering</span></span>
+<span><span class="va">active</span> <span class="op">&lt;-</span> <span class="va">customers</span><span class="op">[</span><span class="va">customers</span><span class="op">$</span><span class="va">status</span> <span class="op">==</span> <span class="st">"active"</span>, <span class="op">]</span></span>
+<span><span class="fu"><a href="reference/has_key.html">has_key</a></span><span class="op">(</span><span class="va">active</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
 <span></span>
-<span><span class="co"># Check key status</span></span>
-<span><span class="fu"><a href="reference/has_key.html">has_key</a></span><span class="op">(</span><span class="va">users</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/get_key_cols.html">get_key_cols</a></span><span class="op">(</span><span class="va">users</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/key_is_valid.html">key_is_valid</a></span><span class="op">(</span><span class="va">users</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="assumption-checks">Assumption Checks<a class="anchor" aria-label="anchor" href="#assumption-checks"></a>
-</h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Uniqueness</span></span>
-<span><span class="fu"><a href="reference/assume_unique.html">assume_unique</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">col1</span>, <span class="va">col2</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Missing values</span></span>
-<span><span class="fu"><a href="reference/assume_no_na.html">assume_no_na</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">required_col</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Completeness (all expected values present)</span></span>
-<span><span class="fu"><a href="reference/assume_complete.html">assume_complete</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">category</span>, expected <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Coverage (reference values covered)</span></span>
-<span><span class="fu"><a href="reference/assume_coverage.html">assume_coverage</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">id</span>, reference <span class="op">=</span> <span class="va">ref_data</span><span class="op">$</span><span class="va">id</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Row count</span></span>
-<span><span class="fu"><a href="reference/assume_nrow.html">assume_nrow</a></span><span class="op">(</span><span class="va">data</span>, min <span class="op">=</span> <span class="fl">100</span>, max <span class="op">=</span> <span class="fl">10000</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Uniqueness-breaking operations are blocked</span></span>
+<span><span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>customer_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error: Key is no longer unique after transformation.</span></span>
+<span><span class="co">#&gt; i Use `unkey()` first if you intend to break uniqueness.</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="join-diagnostics">Join Diagnostics<a class="anchor" aria-label="anchor" href="#join-diagnostics"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Analyze join before executing</span></span>
-<span><span class="fu"><a href="reference/diagnose_join.html">diagnose_join</a></span><span class="op">(</span><span class="va">users</span>, <span class="va">orders</span>, by <span class="op">=</span> <span class="st">"user_id"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ── Join Diagnosis ──</span></span>
+<p>Preview join cardinality before executing:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/diagnose_join.html">diagnose_join</a></span><span class="op">(</span><span class="va">customers</span>, <span class="va">orders</span>, by <span class="op">=</span> <span class="st">"customer_id"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Cardinality: one-to-many</span></span>
-<span><span class="co">#&gt; x: 1000 rows, unique</span></span>
-<span><span class="co">#&gt; y: 5432 rows, 4432 duplicates</span></span>
-<span></span>
-<span><span class="co"># For validated joins, use joinspy</span></span>
-<span><span class="co"># pak::pak("gcol33/joinspy")</span></span></code></pre></div>
+<span><span class="co">#&gt; customers: 1000 rows (unique)</span></span>
+<span><span class="co">#&gt; orders:    5432 rows (4432 duplicates)</span></span>
+<span><span class="co">#&gt; Left join will produce ~5432 rows</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="row-identity-tracking">Row Identity Tracking<a class="anchor" aria-label="anchor" href="#row-identity-tracking"></a>
+<h3 id="locks">Locks<a class="anchor" aria-label="anchor" href="#locks"></a>
 </h3>
-<p>Opt-in stable UUIDs for lineage tracking:</p>
+<p>Assert conditions at pipeline checkpoints. Locks error immediately — no silent continuation.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">customers</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/lock_unique.html">lock_unique</a></span><span class="op">(</span><span class="va">customer_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/lock_no_na.html">lock_no_na</a></span><span class="op">(</span><span class="va">email</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/lock_nrow.html">lock_nrow</a></span><span class="op">(</span>min <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></code></pre></div>
+<p>Available locks:</p>
+<table class="table">
+<thead><tr>
+<th>Function</th>
+<th>Checks</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>lock_unique(df, col)</code></td>
+<td>No duplicate values</td>
+</tr>
+<tr>
+<td><code>lock_no_na(df, col)</code></td>
+<td>No missing values</td>
+</tr>
+<tr>
+<td><code>lock_complete(df)</code></td>
+<td>No NAs in any column</td>
+</tr>
+<tr>
+<td><code>lock_coverage(df, threshold, col)</code></td>
+<td>% non-NA above threshold</td>
+</tr>
+<tr>
+<td><code>lock_nrow(df, min, max)</code></td>
+<td>Row count in range</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="uuids">UUIDs<a class="anchor" aria-label="anchor" href="#uuids"></a>
+</h3>
+<p>Generate stable row identifiers when your data has no natural key. UUIDs survive all transformations and enable row-level tracking.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add_id.html">add_id</a></span><span class="op">(</span><span class="va">customers</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Track which rows were added or removed</span></span>
+<span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">name</span> <span class="op">!=</span> <span class="st">"Bob"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/compare_ids.html">compare_ids</a></span><span class="op">(</span><span class="va">customers</span>, <span class="va">filtered</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Lost: 1 row (7b1e4a9c2f8d3601)</span></span>
+<span><span class="co">#&gt; Kept: 2 rows</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="watch--diff">Watch &amp; Diff<a class="anchor" aria-label="anchor" href="#watch--diff"></a>
+</h3>
+<p><code><a href="reference/watch.html">watch()</a></code> turns drift detection from a manual ceremony into an automatic safety net. Watched data frames auto-snapshot before each dplyr verb, so <code><a href="reference/check_drift.html">check_drift()</a></code> always gives you a cell-level report of what the last transformation changed.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Add IDs to rows</span></span>
-<span><span class="va">users</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add_id.html">add_id</a></span><span class="op">(</span><span class="va">users</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Watch a keyed data frame — stamps a baseline automatically</span></span>
+<span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/key.html">key</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">customer_id</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/watch.html">watch</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># IDs persist through transformations</span></span>
-<span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="va">users</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">active</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/get_id.html">get_id</a></span><span class="op">(</span><span class="va">filtered</span><span class="op">)</span>  <span class="co"># Same IDs as original rows</span></span>
+<span><span class="co"># Every dplyr verb auto-snapshots before executing</span></span>
+<span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"active"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">filtered</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Drift detected</span></span>
+<span><span class="co">#&gt; Removed: 153 row(s)</span></span>
+<span><span class="co">#&gt; Unchanged: 847 row(s)</span></span>
 <span></span>
-<span><span class="co"># Combine data with ID handling</span></span>
-<span><span class="va">combined</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/bind_id.html">bind_id</a></span><span class="op">(</span><span class="va">batch1</span>, <span class="va">batch2</span><span class="op">)</span>  <span class="co"># Checks overlaps, fills missing</span></span>
-<span></span>
-<span><span class="co"># Create deterministic IDs from columns</span></span>
-<span><span class="va">sales</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/make_id.html">make_id</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">country</span>, <span class="va">year</span><span class="op">)</span>  <span class="co"># "US|2024"</span></span>
-<span></span>
-<span><span class="co"># Validate ID integrity</span></span>
-<span><span class="fu"><a href="reference/check_id.html">check_id</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/check_id_disjoint.html">check_id_disjoint</a></span><span class="op">(</span><span class="va">data1</span>, <span class="va">data2</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Compare before/after</span></span>
-<span><span class="fu"><a href="reference/compare_ids.html">compare_ids</a></span><span class="op">(</span><span class="va">before</span>, <span class="va">after</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $lost: 2 IDs</span></span>
-<span><span class="co">#&gt; $gained: 5 IDs</span></span>
-<span><span class="co">#&gt; $preserved: 998 IDs</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="drift-detection">Drift Detection<a class="anchor" aria-label="anchor" href="#drift-detection"></a>
-</h3>
+<span><span class="co"># Cell-level detail through a pipe chain</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="va">filtered</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>score <span class="op">=</span> <span class="va">score</span> <span class="op">+</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Drift detected</span></span>
+<span><span class="co">#&gt; Modified: 847 row(s)</span></span>
+<span><span class="co">#&gt;   score: 847 change(s)</span></span></code></pre></div>
+<p>For manual one-off comparisons, <code><a href="reference/stamp.html">stamp()</a></code> and <code><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff()</a></code> still work directly:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Commit a reference snapshot</span></span>
-<span><span class="va">users</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/commit_keyed.html">commit_keyed</a></span><span class="op">(</span><span class="va">users</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ✓ Snapshot committed: a5ab1a98...</span></span>
+<code class="sourceCode R"><span><span class="co"># Manual stamp + check</span></span>
+<span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/stamp.html">stamp</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">customers</span><span class="op">$</span><span class="va">score</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">999</span></span>
+<span><span class="fu"><a href="reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">customers</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Later, check for changes</span></span>
-<span><span class="fu"><a href="reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">users</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ── Drift Report ──</span></span>
-<span><span class="co">#&gt; ⚠ Drift detected</span></span>
-<span><span class="co">#&gt; ℹ Row count: 1000 -&gt; 1024 (+24)</span></span>
-<span><span class="co">#&gt; ℹ Cell values modified</span></span></code></pre></div>
+<span><span class="co"># Cell-level diff between any two keyed data frames</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">old_version</span>, <span class="va">new_version</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Key: customer_id</span></span>
+<span><span class="co">#&gt; Removed: 2 row(s)</span></span>
+<span><span class="co">#&gt; Added: 5 row(s)</span></span>
+<span><span class="co">#&gt; Modified: 3 row(s)</span></span>
+<span><span class="co">#&gt;   email: 2 change(s)</span></span>
+<span><span class="co">#&gt;   segment: 1 change(s)</span></span></code></pre></div>
+<p>Use <code><a href="reference/unwatch.html">unwatch()</a></code> to stop automatic stamping, or <code><a href="reference/clear_all_snapshots.html">clear_all_snapshots()</a></code> to free memory.</p>
 </div>
-<div class="section level3">
-<h3 id="diagnostics">Diagnostics<a class="anchor" aria-label="anchor" href="#diagnostics"></a>
-</h3>
+</div>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Quick status check</span></span>
-<span><span class="fu"><a href="reference/key_status.html">key_status</a></span><span class="op">(</span><span class="va">users</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">users</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Install from CRAN</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"keyed"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Compare keys between datasets</span></span>
-<span><span class="fu"><a href="reference/compare_keys.html">compare_keys</a></span><span class="op">(</span><span class="va">old_data</span>, <span class="va">new_data</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Find duplicates</span></span>
-<span><span class="fu"><a href="reference/find_duplicates.html">find_duplicates</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">key_col</span><span class="op">)</span></span></code></pre></div>
-</div>
+<span><span class="co"># Or install development version from GitHub</span></span>
+<span><span class="co"># install.packages("pak")</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu">pak</span><span class="op">(</span><span class="st">"gcol33/keyed"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="philosophy">Philosophy<a class="anchor" aria-label="anchor" href="#philosophy"></a>
+<h2 id="when-to-use-something-else">When to Use Something Else<a class="anchor" aria-label="anchor" href="#when-to-use-something-else"></a>
 </h2>
-<ul>
-<li>
-<strong>Keys are explicit</strong>: Define once, validate at creation</li>
-<li>
-<strong>Warnings over errors</strong>: Alert on violations, don’t block by default</li>
-<li>
-<strong>Graceful degradation</strong>: Key metadata survives transformations when possible, drops cleanly when not</li>
-<li>
-<strong>Boundary checks</strong>: Validate at joins and exports, not on every operation</li>
-<li>
-<strong>No magic</strong>: No hidden state, no sidecar files, no databases</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="enhanced-diagnostics">Enhanced Diagnostics<a class="anchor" aria-label="anchor" href="#enhanced-diagnostics"></a>
-</h2>
-<p>Install <a href="https://github.com/gcol33/joinspy" class="external-link">joinspy</a> for richer join diagnostics:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu">pak</span><span class="op">(</span><span class="st">"gcol33/joinspy"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># diagnose_join() automatically uses joinspy when available</span></span>
-<span><span class="fu"><a href="reference/diagnose_join.html">diagnose_join</a></span><span class="op">(</span><span class="va">users</span>, <span class="va">orders</span>, by <span class="op">=</span> <span class="st">"user_id"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ── Pre-Join Diagnostic Report ──</span></span>
-<span><span class="co">#&gt; ... detailed whitespace, encoding, and match analysis ...</span></span></code></pre></div>
+<table class="table">
+<thead><tr>
+<th>Need</th>
+<th>Better Tool</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Enforced schema</td>
+<td>SQLite, DuckDB</td>
+</tr>
+<tr>
+<td>Full data validation</td>
+<td>pointblank, validate</td>
+</tr>
+<tr>
+<td>Production pipelines</td>
+<td>targets</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
 <ul>
-<li><a href="https://gillescolling.com/keyed/articles/quickstart.html" class="external-link">Quick Start</a></li>
-<li><a href="https://gillescolling.com/keyed/reference/index.html" class="external-link">Function Reference</a></li>
+<li><a href="https://gillescolling.com/keyed/articles/quickstart.html">Quick Start</a></li>
+<li><a href="https://gillescolling.com/keyed/articles/philosophy.html">Design Philosophy</a></li>
+<li><a href="https://gillescolling.com/keyed/reference/index.html">Function Reference</a></li>
 </ul>
 </div>
 <div class="section level2">
@@ -308,10 +326,22 @@
 </h2>
 <p>MIT (see the LICENSE.md file)</p>
 </div>
+<div class="section level2">
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bibtex"><code class="sourceCode bibtex"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co">@software{keyed,</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">  author = {Colling, Gilles},</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">  title = {keyed: Explicit Key Assumptions for Flat-File Data},</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">  year = {2025},</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">  url = {https://CRAN.R-project.org/package=keyed},</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">  doi = {10.32614/CRAN.package.keyed}</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">}</span></span></code></pre></div>
+</div>
 </div>
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
+<li><a href="https://cloud.r-project.org/package=keyed" class="external-link">View on CRAN</a></li>
 <li><a href="https://github.com/gcol33/keyed/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/gcol33/keyed/issues" class="external-link">Report a bug</a></li>
 </ul>

@@ -35,7 +35,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">keyed</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,7 +44,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="active nav-item"><a class="nav-link" href="../articles/quickstart.html">Get Started</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/quickstart.html">Get Started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -85,7 +85,7 @@
                         <h4 data-toc-skip class="author">Gilles
 Colling</h4>
             
-            <h4 data-toc-skip class="date">2026-01-24</h4>
+            <h4 data-toc-skip class="date">2026-02-25</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/gcol33/keyed/blob/HEAD/vignettes/quickstart.Rmd" class="external-link"><code>vignettes/quickstart.Rmd</code></a></small>
       <div class="d-none name"><code>quickstart.Rmd</code></div>
@@ -144,7 +144,7 @@ assumptions explicit:</p>
 <code class="sourceCode R"><span><span class="co"># Define what you expect: customer_id is unique</span></span>
 <span><span class="va">january_keyed</span> <span class="op">&lt;-</span> <span class="va">january</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/key.html">key</a></span><span class="op">(</span><span class="va">customer_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/assume_no_na.html">assume_no_na</a></span><span class="op">(</span><span class="va">email</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/lock_no_na.html">lock_no_na</a></span><span class="op">(</span><span class="va">email</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># This works - January data is clean</span></span>
 <span><span class="va">january_keyed</span></span>
@@ -194,8 +194,8 @@ consistently to each import.</p>
 <code class="sourceCode R"><span><span class="va">validate_customer_export</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">df</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="../reference/key.html">key</a></span><span class="op">(</span><span class="va">customer_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/assume_no_na.html">assume_no_na</a></span><span class="op">(</span><span class="va">email</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/assume_nrow.html">assume_nrow</a></span><span class="op">(</span>min <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="../reference/lock_no_na.html">lock_no_na</a></span><span class="op">(</span><span class="va">email</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/lock_nrow.html">lock_nrow</a></span><span class="op">(</span>min <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="co"># January: passes</span></span>
@@ -217,7 +217,7 @@ consistently to each import.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Filter preserves key</span></span>
 <span><span class="va">premium_customers</span> <span class="op">&lt;-</span> <span class="va">january_clean</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">segment</span> <span class="op">==</span> <span class="st">"premium"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">segment</span> <span class="op">==</span> <span class="st">"premium"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/has_key.html">has_key</a></span><span class="op">(</span><span class="va">premium_customers</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
@@ -226,21 +226,28 @@ consistently to each import.</p>
 <span></span>
 <span><span class="co"># Mutate preserves key</span></span>
 <span><span class="va">enriched</span> <span class="op">&lt;-</span> <span class="va">january_clean</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>domain <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">".*@"</span>, <span class="st">""</span>, <span class="va">email</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>domain <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">".*@"</span>, <span class="st">""</span>, <span class="va">email</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/has_key.html">has_key</a></span><span class="op">(</span><span class="va">enriched</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="graceful-degradation">Graceful degradation<a class="anchor" aria-label="anchor" href="#graceful-degradation"></a>
+<h3 id="strict-enforcement">Strict enforcement<a class="anchor" aria-label="anchor" href="#strict-enforcement"></a>
 </h3>
-<p>If an operation breaks uniqueness, keyed warns you rather than
-failing silently:</p>
+<p>If an operation breaks uniqueness, keyed errors and tells you to use
+<code><a href="../reference/unkey.html">unkey()</a></code> first:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># This creates duplicates - key is dropped with warning</span></span>
+<code class="sourceCode R"><span><span class="co"># This creates duplicates - keyed stops you</span></span>
 <span><span class="va">january_clean</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>customer_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Key modified and is no longer unique.</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>customer_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;"> in `mutate()`:</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Key is no longer unique after transformation.</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> Use `unkey()` first if you intend to break uniqueness.</span></span></code></pre></div>
+<p>To proceed, you must explicitly acknowledge breaking the key:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">january_clean</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/unkey.html">unkey</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>customer_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 3</span></span></span>
 <span><span class="co">#&gt;   customer_id email             segment</span></span>
 <span><span class="co">#&gt;         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
@@ -249,8 +256,6 @@ failing silently:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>           1 carol@example.com premium</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>           1 dave@example.com  basic  </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>           1 eve@example.com   premium</span></span></code></pre></div>
-<p>The warning tells you exactly what happened. No silent
-corruption.</p>
 <hr>
 </div>
 </div>
@@ -267,7 +272,7 @@ understand cardinality <em>before</em> joining.</p>
 <div class="section level3">
 <h3 id="create-sample-data">Create sample data<a class="anchor" aria-label="anchor" href="#create-sample-data"></a>
 </h3>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">customers</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  customer_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,</span>
 <span>  name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Alice"</span>, <span class="st">"Bob"</span>, <span class="st">"Carol"</span>, <span class="st">"Dave"</span>, <span class="st">"Eve"</span><span class="op">)</span>,</span>
@@ -285,7 +290,7 @@ understand cardinality <em>before</em> joining.</p>
 <div class="section level3">
 <h3 id="diagnose-before-joining">Diagnose before joining<a class="anchor" aria-label="anchor" href="#diagnose-before-joining"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_join.html">diagnose_join</a></span><span class="op">(</span><span class="va">customers</span>, <span class="va">orders</span>, by <span class="op">=</span> <span class="st">"customer_id"</span>, use_joinspy <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Join Diagnosis</span></span>
@@ -299,13 +304,13 @@ have multiple orders</p></li>
 <li><p><strong>Coverage</strong>: Shows how many keys match vs. don’t
 match</p></li>
 </ul>
-<p>Now you know what to expect. A <code><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join()</a></code> will create 8
+<p>Now you know what to expect. A <code>left_join()</code> will create 8
 rows (one per order), not 5 (one per customer).</p>
 </div>
 <div class="section level3">
 <h3 id="compare-key-structures">Compare key structures<a class="anchor" aria-label="anchor" href="#compare-key-structures"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compare_keys.html">compare_keys</a></span><span class="op">(</span><span class="va">customers</span>, <span class="va">orders</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Key Comparison</span></span>
@@ -335,7 +340,7 @@ identifiers that survive transformations.</p>
 <div class="section level3">
 <h3 id="add-row-ids">Add row IDs<a class="anchor" aria-label="anchor" href="#add-row-ids"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Add UUIDs to rows</span></span>
 <span><span class="va">customers_tracked</span> <span class="op">&lt;-</span> <span class="va">customers</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_id.html">add_id</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -345,37 +350,37 @@ identifiers that survive transformations.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># Key:            customer_id | .id</span></span></span>
 <span><span class="co">#&gt;   .id                                  customer_id name  tier  </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 7c04f88e-e5bd-4329-a3ba-d4f8f65f9c7a           1 Alice gold  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> e0aafb43-0892-43ad-8039-ad8733617c25           2 Bob   silver</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 8119100f-1e5c-4338-bd15-677017694593           3 Carol gold  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 42cfb1b6-1b7c-4e4d-9bb4-4dc35bba61c5           4 Dave  bronze</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> b8b047db-1474-47b1-a73d-c3bceea59076           5 Eve   silver</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> b0205c4d-ac33-4312-adf4-57229a857856           1 Alice gold  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 55395b44-143f-489c-a9a1-e678a20ca355           2 Bob   silver</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 7eee62a4-7c27-4f66-8b0d-4e00cc37c870           3 Carol gold  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> e1f0e024-750a-4b7c-a9c8-c0ec907d314e           4 Dave  bronze</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 7df15b6b-89f6-4bdb-a0a4-68db5d835498           5 Eve   silver</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="ids-survive-transformations">IDs survive transformations<a class="anchor" aria-label="anchor" href="#ids-survive-transformations"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Filter: IDs persist</span></span>
 <span><span class="va">gold_customers</span> <span class="op">&lt;-</span> <span class="va">customers_tracked</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">tier</span> <span class="op">==</span> <span class="st">"gold"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">tier</span> <span class="op">==</span> <span class="st">"gold"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_id.html">get_id</a></span><span class="op">(</span><span class="va">gold_customers</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "7c04f88e-e5bd-4329-a3ba-d4f8f65f9c7a"</span></span>
-<span><span class="co">#&gt; [2] "8119100f-1e5c-4338-bd15-677017694593"</span></span>
+<span><span class="co">#&gt; [1] "b0205c4d-ac33-4312-adf4-57229a857856"</span></span>
+<span><span class="co">#&gt; [2] "7eee62a4-7c27-4f66-8b0d-4e00cc37c870"</span></span>
 <span></span>
 <span><span class="co"># Compare with original</span></span>
 <span><span class="fu"><a href="../reference/compare_ids.html">compare_ids</a></span><span class="op">(</span><span class="va">customers_tracked</span>, <span class="va">gold_customers</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $lost</span></span>
-<span><span class="co">#&gt; [1] "e0aafb43-0892-43ad-8039-ad8733617c25"</span></span>
-<span><span class="co">#&gt; [2] "42cfb1b6-1b7c-4e4d-9bb4-4dc35bba61c5"</span></span>
-<span><span class="co">#&gt; [3] "b8b047db-1474-47b1-a73d-c3bceea59076"</span></span>
+<span><span class="co">#&gt; [1] "55395b44-143f-489c-a9a1-e678a20ca355"</span></span>
+<span><span class="co">#&gt; [2] "e1f0e024-750a-4b7c-a9c8-c0ec907d314e"</span></span>
+<span><span class="co">#&gt; [3] "7df15b6b-89f6-4bdb-a0a4-68db5d835498"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $gained</span></span>
 <span><span class="co">#&gt; character(0)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $preserved</span></span>
-<span><span class="co">#&gt; [1] "7c04f88e-e5bd-4329-a3ba-d4f8f65f9c7a"</span></span>
-<span><span class="co">#&gt; [2] "8119100f-1e5c-4338-bd15-677017694593"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "b0205c4d-ac33-4312-adf4-57229a857856"</span></span>
+<span><span class="co">#&gt; [2] "7eee62a4-7c27-4f66-8b0d-4e00cc37c870"</span></span></code></pre></div>
 <p>The comparison shows exactly which rows were lost (filtered out) and
 which were preserved.</p>
 </div>
@@ -384,7 +389,7 @@ which were preserved.</p>
 </h3>
 <p>When appending new data, <code><a href="../reference/bind_id.html">bind_id()</a></code> handles ID
 conflicts:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">batch1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/add_id.html">add_id</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">batch2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">4</span><span class="op">:</span><span class="fl">6</span><span class="op">)</span>  <span class="co"># No IDs yet</span></span>
 <span></span>
@@ -392,12 +397,12 @@ conflicts:</p>
 <span><span class="va">combined</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bind_id.html">bind_id</a></span><span class="op">(</span><span class="va">batch1</span>, <span class="va">batch2</span><span class="op">)</span></span>
 <span><span class="va">combined</span></span>
 <span><span class="co">#&gt;                                    .id x</span></span>
-<span><span class="co">#&gt; 1 e19bac07-f676-4724-b252-b5f1116d5a5a 1</span></span>
-<span><span class="co">#&gt; 2 852c2ec5-95f1-439f-a6f9-fb7a31e77e42 2</span></span>
-<span><span class="co">#&gt; 3 d4b115d6-6200-4ed1-ad63-c79eb6cfb722 3</span></span>
-<span><span class="co">#&gt; 4 6fd72f58-a192-4094-9daa-fd259bcc3f6b 4</span></span>
-<span><span class="co">#&gt; 5 6abf5c8c-9846-41ac-bcfc-ba6e94a66eb6 5</span></span>
-<span><span class="co">#&gt; 6 7d12d6fc-5807-4f57-a935-10278143c5c9 6</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 c020b733-ec58-4225-9c00-590b960fcc0c 1</span></span>
+<span><span class="co">#&gt; 2 552afd83-b857-4843-9435-3f11ef4cd2cf 2</span></span>
+<span><span class="co">#&gt; 3 b3ca2d3d-6cc8-427c-a30f-bf7a5d210e2d 3</span></span>
+<span><span class="co">#&gt; 4 6f974ab9-ad0f-4557-bf84-34e1804a850f 4</span></span>
+<span><span class="co">#&gt; 5 2d3365f6-4957-4756-b837-417b75fbfea7 5</span></span>
+<span><span class="co">#&gt; 6 909a5d02-9d34-4d31-a98f-9f4c30c62db3 6</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -409,37 +414,36 @@ pipeline runs.</p>
 <p><strong>Challenge</strong>: Reference data (lookup tables, dimension
 tables) changes upstream without notice. Your pipeline silently uses
 stale assumptions.</p>
-<p><strong>Strategy</strong>: Commit snapshots with
-<code><a href="../reference/commit_keyed.html">commit_keyed()</a></code> and check for drift with
-<code><a href="../reference/check_drift.html">check_drift()</a></code>.</p>
+<p><strong>Strategy</strong>: Commit snapshots with <code><a href="../reference/stamp.html">stamp()</a></code>
+and check for drift with <code><a href="../reference/check_drift.html">check_drift()</a></code>.</p>
 <div class="section level3">
 <h3 id="commit-a-reference-snapshot">Commit a reference snapshot<a class="anchor" aria-label="anchor" href="#commit-a-reference-snapshot"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Commit current state as reference</span></span>
 <span><span class="va">reference_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  region_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"US"</span>, <span class="st">"EU"</span>, <span class="st">"APAC"</span><span class="op">)</span>,</span>
 <span>  tax_rate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.08</span>, <span class="fl">0.20</span>, <span class="fl">0.10</span><span class="op">)</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/key.html">key</a></span><span class="op">(</span><span class="va">region_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/commit_keyed.html">commit_keyed</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/stamp.html">stamp</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Snapshot committed: 76a76466...</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="check-for-drift">Check for drift<a class="anchor" aria-label="anchor" href="#check-for-drift"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># No changes yet</span></span>
 <span><span class="fu"><a href="../reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">reference_data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Drift Report</span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> No drift detected</span></span>
-<span><span class="co">#&gt; Snapshot: 76a76466... (2026-01-24 01:27)</span></span></code></pre></div>
+<span><span class="co">#&gt; Snapshot: 76a76466... (2026-02-25 10:54)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> No drift detected</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="detect-changes">Detect changes<a class="anchor" aria-label="anchor" href="#detect-changes"></a>
 </h3>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulate upstream change: EU tax rate changed</span></span>
 <span><span class="va">modified_data</span> <span class="op">&lt;-</span> <span class="va">reference_data</span></span>
 <span><span class="va">modified_data</span><span class="op">$</span><span class="va">tax_rate</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0.21</span></span>
@@ -448,17 +452,48 @@ stale assumptions.</p>
 <span><span class="fu"><a href="../reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">modified_data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Drift Report</span></span>
+<span><span class="co">#&gt; Snapshot: 76a76466... (2026-02-25 10:54)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Drift detected</span></span>
-<span><span class="co">#&gt; Snapshot: 76a76466... (2026-01-24 01:27)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Key values changed</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Cell values modified</span></span></code></pre></div>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── Value Diff</span></span>
+<span><span class="co">#&gt; Key: <span style="color: #00BB00;">region_id</span></span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Modified: 1 row(s)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">tax_rate</span>: 1 change(s)</span></span>
+<span><span class="co">#&gt; Unchanged: 2 row(s)</span></span></code></pre></div>
 <p>The drift report shows exactly what changed, letting you decide
 whether to accept the new data or investigate.</p>
 </div>
 <div class="section level3">
+<h3 id="row-level-diff">Row-level diff<a class="anchor" aria-label="anchor" href="#row-level-diff"></a>
+</h3>
+<p>For detailed cell-level comparison, use <code><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff()</a></code> on two
+keyed data frames:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">old_rates</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/key.html">key</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  region_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"US"</span>, <span class="st">"EU"</span>, <span class="st">"APAC"</span><span class="op">)</span>,</span>
+<span>  tax_rate  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.08</span>, <span class="fl">0.20</span>, <span class="fl">0.10</span><span class="op">)</span></span>
+<span><span class="op">)</span>, <span class="va">region_id</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">new_rates</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  region_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"US"</span>, <span class="st">"EU"</span>, <span class="st">"APAC"</span>, <span class="st">"LATAM"</span><span class="op">)</span>,</span>
+<span>  tax_rate  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.08</span>, <span class="fl">0.21</span>, <span class="fl">0.10</span>, <span class="fl">0.15</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff</a></span><span class="op">(</span><span class="va">old_rates</span>, <span class="va">new_rates</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── Value Diff</span></span>
+<span><span class="co">#&gt; Key: <span style="color: #00BB00;">region_id</span></span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Added: 1 row(s)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Modified: 1 row(s)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">tax_rate</span>: 1 change(s)</span></span>
+<span><span class="co">#&gt; Unchanged: 2 row(s)</span></span></code></pre></div>
+</div>
+<div class="section level3">
 <h3 id="cleanup">Cleanup<a class="anchor" aria-label="anchor" href="#cleanup"></a>
 </h3>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Remove snapshots when done</span></span>
 <span><span class="fu"><a href="../reference/clear_all_snapshots.html">clear_all_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> This will remove 1 snapshot(s) from cache.</span></span>
@@ -505,23 +540,23 @@ whether to accept the new data or investigate.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code><a href="../reference/assume_unique.html">assume_unique()</a></code></td>
+<td><code><a href="../reference/lock_unique.html">lock_unique()</a></code></td>
 <td>No duplicate values</td>
 </tr>
 <tr class="even">
-<td><code><a href="../reference/assume_no_na.html">assume_no_na()</a></code></td>
+<td><code><a href="../reference/lock_no_na.html">lock_no_na()</a></code></td>
 <td>No missing values</td>
 </tr>
 <tr class="odd">
-<td><code><a href="../reference/assume_complete.html">assume_complete()</a></code></td>
+<td><code><a href="../reference/lock_complete.html">lock_complete()</a></code></td>
 <td>All expected values present</td>
 </tr>
 <tr class="even">
-<td><code><a href="../reference/assume_coverage.html">assume_coverage()</a></code></td>
+<td><code><a href="../reference/lock_coverage.html">lock_coverage()</a></code></td>
 <td>Reference values covered</td>
 </tr>
 <tr class="odd">
-<td><code><a href="../reference/assume_nrow.html">assume_nrow()</a></code></td>
+<td><code><a href="../reference/lock_nrow.html">lock_nrow()</a></code></td>
 <td>Row count within bounds</td>
 </tr>
 </tbody>
@@ -601,7 +636,7 @@ whether to accept the new data or investigate.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code><a href="../reference/commit_keyed.html">commit_keyed()</a></code></td>
+<td><code><a href="../reference/stamp.html">stamp()</a></code></td>
 <td>Save reference snapshot</td>
 </tr>
 <tr class="even">
@@ -609,10 +644,14 @@ whether to accept the new data or investigate.</p>
 <td>Compare against snapshot</td>
 </tr>
 <tr class="odd">
+<td><code><a href="https://rdrr.io/r/base/diff.html" class="external-link">diff()</a></code></td>
+<td>Cell-level comparison of two data frames</td>
+</tr>
+<tr class="even">
 <td><code><a href="../reference/list_snapshots.html">list_snapshots()</a></code></td>
 <td>View saved snapshots</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code><a href="../reference/clear_snapshot.html">clear_snapshot()</a></code></td>
 <td>Remove specific snapshot</td>
 </tr>
@@ -660,8 +699,8 @@ and semi-structured workflows where heavier tools add friction.</p>
 <ul>
 <li><p><a href="philosophy.html">Design Philosophy</a> - The reasoning
 behind keyed’s approach</p></li>
-<li><p><a href="../reference/index.html">Function Reference</a> -
-Complete API documentation</p></li>
+<li><p><a href="https://gillescolling.com/keyed/reference/index.html">Function
+Reference</a> - Complete API documentation</p></li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
