@@ -5,7 +5,7 @@
 # degrades gracefully to a plain tibble with a warning.
 
 
-# Snapshot state helpers -------------------------------------------------------
+# Shared helpers ---------------------------------------------------------------
 
 #' Capture snapshot state before a dplyr verb
 #'
@@ -31,6 +31,28 @@ apply_snapshot_state <- function(result, state) {
   }
   if (state$watched) attr(result, "keyed_watched") <- TRUE
   result
+}
+
+#' Re-attach key if key columns survived, else degrade to tibble
+#' @noRd
+rekey_if_present <- function(result, key_cols) {
+  if (all(key_cols %in% names(result))) {
+    new_keyed_df(result, key_cols)
+  } else {
+    tibble::as_tibble(result)
+  }
+}
+
+#' Re-attach key if key columns survived AND are still unique, else degrade
+#' @noRd
+rekey_if_unique <- function(result, key_cols) {
+  if (all(key_cols %in% names(result))) {
+    n_unique <- vctrs::vec_unique_count(result[key_cols])
+    if (n_unique == nrow(result)) {
+      return(new_keyed_df(result, key_cols))
+    }
+  }
+  tibble::as_tibble(result)
 }
 
 
@@ -72,11 +94,7 @@ filter.keyed_df <- function(.data, ..., .preserve = FALSE) {
   .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
-  if (all(key_cols %in% names(result))) {
-    result <- new_keyed_df(result, key_cols)
-  } else {
-    result <- tibble::as_tibble(result)
-  }
+  result <- rekey_if_present(result, key_cols)
   apply_snapshot_state(result, state)
 }
 
@@ -175,18 +193,11 @@ summarise.keyed_df <- function(.data, ..., .groups = NULL) {
   result <- NextMethod()
 
   groups <- dplyr::group_vars(.data)
-
   if (length(groups) > 0 && setequal(groups, key_cols)) {
-    if (all(key_cols %in% names(result))) {
-      n_unique <- vctrs::vec_unique_count(result[key_cols])
-      if (n_unique == nrow(result)) {
-        result <- new_keyed_df(result, key_cols)
-        return(apply_snapshot_state(result, state))
-      }
-    }
+    result <- rekey_if_unique(result, key_cols)
+  } else {
+    result <- tibble::as_tibble(result)
   }
-
-  result <- tibble::as_tibble(result)
   apply_snapshot_state(result, state)
 }
 
@@ -211,16 +222,7 @@ distinct.keyed_df <- function(.data, ..., .keep_all = FALSE) {
   .data <- state$data
   key_cols <- get_key_cols(.data)
   result <- NextMethod()
-
-  if (all(key_cols %in% names(result))) {
-    n_unique <- vctrs::vec_unique_count(result[key_cols])
-    if (n_unique == nrow(result)) {
-      result <- new_keyed_df(result, key_cols)
-      return(apply_snapshot_state(result, state))
-    }
-  }
-
-  result <- tibble::as_tibble(result)
+  result <- rekey_if_unique(result, key_cols)
   apply_snapshot_state(result, state)
 }
 
@@ -246,12 +248,7 @@ ungroup.keyed_df <- function(x, ...) {
   x <- state$data
   key_cols <- get_key_cols(x)
   result <- NextMethod()
-
-  if (all(key_cols %in% names(result))) {
-    result <- new_keyed_df(result, key_cols)
-  } else {
-    result <- tibble::as_tibble(result)
-  }
+  result <- rekey_if_present(result, key_cols)
   apply_snapshot_state(result, state)
 }
 
