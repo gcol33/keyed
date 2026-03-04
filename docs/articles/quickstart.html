@@ -44,7 +44,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="../articles/quickstart.html">Get Started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../articles/quickstart.html">Get Started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -85,7 +85,7 @@
                         <h4 data-toc-skip class="author">Gilles
 Colling</h4>
             
-            <h4 data-toc-skip class="date">2026-02-25</h4>
+            <h4 data-toc-skip class="date">2026-03-04</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/gcol33/keyed/blob/HEAD/vignettes/quickstart.Rmd" class="external-link"><code>vignettes/quickstart.Rmd</code></a></small>
       <div class="d-none name"><code>quickstart.Rmd</code></div>
@@ -350,11 +350,11 @@ identifiers that survive transformations.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># Key:            customer_id | .id</span></span></span>
 <span><span class="co">#&gt;   .id                                  customer_id name  tier  </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> c97e636d-cd69-4e0a-801c-862fbe6f1171           1 Alice gold  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 0c4f2853-33fe-4e14-8bf7-f05b869df7ca           2 Bob   silver</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> bdaad0a7-57e6-433c-afc7-27820f3508fb           3 Carol gold  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 74a24590-77bb-491f-a1a3-5fee028a6bc1           4 Dave  bronze</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 6c51e048-048d-45ef-b6fe-73be4351b115           5 Eve   silver</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> c40fdd76-151a-4d89-bacb-8aa851c00ce9           1 Alice gold  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> c1bfd209-f339-4f41-83da-e326cfa45518           2 Bob   silver</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 92e4a7c2-8d0d-4615-bb08-77504846de1b           3 Carol gold  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> dad5c49a-ab17-4acc-ad14-c2a39b41e6f5           4 Dave  bronze</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 8e831da7-97bd-4984-a00d-f7a7ed0c99c9           5 Eve   silver</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="ids-survive-transformations">IDs survive transformations<a class="anchor" aria-label="anchor" href="#ids-survive-transformations"></a>
@@ -365,22 +365,22 @@ identifiers that survive transformations.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">tier</span> <span class="op">==</span> <span class="st">"gold"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_id.html">get_id</a></span><span class="op">(</span><span class="va">gold_customers</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "c97e636d-cd69-4e0a-801c-862fbe6f1171"</span></span>
-<span><span class="co">#&gt; [2] "bdaad0a7-57e6-433c-afc7-27820f3508fb"</span></span>
+<span><span class="co">#&gt; [1] "c40fdd76-151a-4d89-bacb-8aa851c00ce9"</span></span>
+<span><span class="co">#&gt; [2] "92e4a7c2-8d0d-4615-bb08-77504846de1b"</span></span>
 <span></span>
 <span><span class="co"># Compare with original</span></span>
 <span><span class="fu"><a href="../reference/compare_ids.html">compare_ids</a></span><span class="op">(</span><span class="va">customers_tracked</span>, <span class="va">gold_customers</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $lost</span></span>
-<span><span class="co">#&gt; [1] "0c4f2853-33fe-4e14-8bf7-f05b869df7ca"</span></span>
-<span><span class="co">#&gt; [2] "74a24590-77bb-491f-a1a3-5fee028a6bc1"</span></span>
-<span><span class="co">#&gt; [3] "6c51e048-048d-45ef-b6fe-73be4351b115"</span></span>
+<span><span class="co">#&gt; [1] "c1bfd209-f339-4f41-83da-e326cfa45518"</span></span>
+<span><span class="co">#&gt; [2] "dad5c49a-ab17-4acc-ad14-c2a39b41e6f5"</span></span>
+<span><span class="co">#&gt; [3] "8e831da7-97bd-4984-a00d-f7a7ed0c99c9"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $gained</span></span>
 <span><span class="co">#&gt; character(0)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $preserved</span></span>
-<span><span class="co">#&gt; [1] "c97e636d-cd69-4e0a-801c-862fbe6f1171"</span></span>
-<span><span class="co">#&gt; [2] "bdaad0a7-57e6-433c-afc7-27820f3508fb"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "c40fdd76-151a-4d89-bacb-8aa851c00ce9"</span></span>
+<span><span class="co">#&gt; [2] "92e4a7c2-8d0d-4615-bb08-77504846de1b"</span></span></code></pre></div>
 <p>The comparison shows exactly which rows were lost (filtered out) and
 which were preserved.</p>
 </div>
@@ -397,12 +397,12 @@ conflicts:</p>
 <span><span class="va">combined</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bind_id.html">bind_id</a></span><span class="op">(</span><span class="va">batch1</span>, <span class="va">batch2</span><span class="op">)</span></span>
 <span><span class="va">combined</span></span>
 <span><span class="co">#&gt;                                    .id x</span></span>
-<span><span class="co">#&gt; 1 4f0617c9-643f-47a9-9a4c-456f9558fb8d 1</span></span>
-<span><span class="co">#&gt; 2 4fb77981-65fc-42b6-9fad-79ad75a362f6 2</span></span>
-<span><span class="co">#&gt; 3 a8e3e7d6-001b-4713-9886-129665db919f 3</span></span>
-<span><span class="co">#&gt; 4 433c314e-5149-469f-b960-eb1c5b9b29b6 4</span></span>
-<span><span class="co">#&gt; 5 fbe68c09-82d0-454b-a2e0-fe7f7ff68694 5</span></span>
-<span><span class="co">#&gt; 6 f6776c3f-480a-4e3e-b94c-9170208e4edb 6</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 7f499fa3-971c-45c4-99ca-fa70430b21ce 1</span></span>
+<span><span class="co">#&gt; 2 61f3cfa8-fff0-4ba2-85bb-55dd8ce9f94a 2</span></span>
+<span><span class="co">#&gt; 3 79f10eb4-ed88-4141-9829-6ba1395b2772 3</span></span>
+<span><span class="co">#&gt; 4 ef62f6e8-9d23-4a01-a73f-7fb8ec92faa0 4</span></span>
+<span><span class="co">#&gt; 5 01547a24-ae01-4e57-bac7-b592b947de7c 5</span></span>
+<span><span class="co">#&gt; 6 516d3536-ac2d-4c82-8f3d-2bb65061ea08 6</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -437,7 +437,7 @@ and check for drift with <code><a href="../reference/check_drift.html">check_dri
 <span><span class="fu"><a href="../reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">reference_data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Drift Report</span></span>
-<span><span class="co">#&gt; Snapshot: 76a76466... (2026-02-25 11:16)</span></span>
+<span><span class="co">#&gt; Snapshot: 76a76466... (2026-03-04 12:49)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> No drift detected</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -452,7 +452,7 @@ and check for drift with <code><a href="../reference/check_drift.html">check_dri
 <span><span class="fu"><a href="../reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">modified_data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Drift Report</span></span>
-<span><span class="co">#&gt; Snapshot: 76a76466... (2026-02-25 11:16)</span></span>
+<span><span class="co">#&gt; Snapshot: 76a76466... (2026-03-04 12:49)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Drift detected</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Value Diff</span></span>

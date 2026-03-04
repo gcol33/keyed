@@ -2,6 +2,8 @@
 
 ## keyed 0.2.0
 
+CRAN release: 2026-02-25
+
 ### New Features
 
 - [`stamp()`](https://gillescolling.com/keyed/reference/stamp.md)
