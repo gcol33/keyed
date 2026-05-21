@@ -206,7 +206,7 @@ to free memory.
 install.packages("keyed")
 
 # Or install development version from GitHub
-# install.packages("pak")
+install.packages("pak")
 pak::pak("gcol33/keyed")
 ```
 

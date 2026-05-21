@@ -169,7 +169,7 @@ Use `unwatch()` to stop automatic stamping, or `clear_all_snapshots()` to free m
 install.packages("keyed")
 
 # Or install development version from GitHub
-# install.packages("pak")
+install.packages("pak")
 pak::pak("gcol33/keyed")
 ```
 
