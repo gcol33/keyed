@@ -1,6 +1,6 @@
 # keyed
 
-*the spreadsheet swears it's unique*
+*a key that stays unique through the pipeline*
 
 [![CRAN status](https://www.r-pkg.org/badges/version/keyed)](https://CRAN.R-project.org/package=keyed)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/keyed)](https://cran.r-project.org/package=keyed)
