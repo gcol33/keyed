@@ -1,7 +1,5 @@
 # keyed
 
-> Small exact engines for scientific computing in R.
-
 *a key that stays unique through the pipeline*
 
 [![CRAN status](https://www.r-pkg.org/badges/version/keyed)](https://CRAN.R-project.org/package=keyed)
