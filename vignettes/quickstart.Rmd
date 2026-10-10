@@ -20,6 +20,15 @@ library(dplyr)
 set.seed(42)
 ```
 
+## Installation
+
+```{r, eval = FALSE}
+install.packages("keyed")            # CRAN
+
+install.packages("pak")              # development version
+pak::pak("gcol33/keyed")
+```
+
 ## The Problem: Silent Data Corruption
 
 You receive monthly customer exports from a CRM system. The data should have unique `customer_id` values and complete `email` addresses. One month, someone upstream changes the export logic. Now `customer_id` has duplicates and some emails are missing.

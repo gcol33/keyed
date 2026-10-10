@@ -17,6 +17,17 @@ erroring the moment a transformation makes the key non-unique. A database
 enforces this for you; a CSV does not, so duplicates slip in and surface three
 joins later as a wrong row count.
 
+## Installation
+
+```r
+install.packages("keyed")            # CRAN
+
+install.packages("pak")              # development version
+pak::pak("gcol33/keyed")
+```
+
+## Quick start
+
 ```r
 library(keyed)
 
@@ -150,15 +161,6 @@ For an enforced schema use SQLite or DuckDB; for full validation reports use
 pointblank or validate. `keyed` covers the gap in between, where you are
 working interactively with a flat file and want one assumption held without
 standing up infrastructure.
-
-## Installation
-
-```r
-install.packages("keyed")            # CRAN
-
-install.packages("pak")              # development version
-pak::pak("gcol33/keyed")
-```
 
 ## Documentation
 
