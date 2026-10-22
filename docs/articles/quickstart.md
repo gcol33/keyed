@@ -1,5 +1,15 @@
 # Quick Start
 
+## Installation
+
+``` r
+
+install.packages("keyed")            # CRAN
+
+install.packages("pak")              # development version
+pak::pak("gcol33/keyed")
+```
+
 ## The Problem: Silent Data Corruption
 
 You receive monthly customer exports from a CRM system. The data should
@@ -242,8 +252,9 @@ The diagnosis shows:
 
 - **Coverage**: Shows how many keys match vs. don’t match
 
-Now you know what to expect. A `left_join()` will create 8 rows (one per
-order), not 5 (one per customer).
+Now you know what to expect. A
+[`left_join()`](https://dplyr.tidyverse.org/reference/mutate-joins.html)
+will create 8 rows (one per order), not 5 (one per customer).
 
 ### Compare key structures
 
@@ -291,11 +302,11 @@ customers_tracked
 #> # Key:            customer_id | .id
 #>   .id                                  customer_id name  tier  
 #>   <chr>                                      <int> <chr> <chr> 
-#> 1 c40fdd76-151a-4d89-bacb-8aa851c00ce9           1 Alice gold  
-#> 2 c1bfd209-f339-4f41-83da-e326cfa45518           2 Bob   silver
-#> 3 92e4a7c2-8d0d-4615-bb08-77504846de1b           3 Carol gold  
-#> 4 dad5c49a-ab17-4acc-ad14-c2a39b41e6f5           4 Dave  bronze
-#> 5 8e831da7-97bd-4984-a00d-f7a7ed0c99c9           5 Eve   silver
+#> 1 654a495e-ab4d-452f-a7dc-4b0adf50cb90           1 Alice gold  
+#> 2 0545c8f7-6da8-442e-837e-c1e64fead92c           2 Bob   silver
+#> 3 4b382c84-4410-4c4c-8ca1-e68fd1bd5945           3 Carol gold  
+#> 4 a2a5ad43-6796-41d8-9a90-a7c86a5e8fb7           4 Dave  bronze
+#> 5 7804585d-fa51-44d5-b465-baaccc094d05           5 Eve   silver
 ```
 
 ### IDs survive transformations
@@ -307,22 +318,22 @@ gold_customers <- customers_tracked |>
   filter(tier == "gold")
 
 get_id(gold_customers)
-#> [1] "c40fdd76-151a-4d89-bacb-8aa851c00ce9"
-#> [2] "92e4a7c2-8d0d-4615-bb08-77504846de1b"
+#> [1] "654a495e-ab4d-452f-a7dc-4b0adf50cb90"
+#> [2] "4b382c84-4410-4c4c-8ca1-e68fd1bd5945"
 
 # Compare with original
 compare_ids(customers_tracked, gold_customers)
 #> $lost
-#> [1] "c1bfd209-f339-4f41-83da-e326cfa45518"
-#> [2] "dad5c49a-ab17-4acc-ad14-c2a39b41e6f5"
-#> [3] "8e831da7-97bd-4984-a00d-f7a7ed0c99c9"
+#> [1] "0545c8f7-6da8-442e-837e-c1e64fead92c"
+#> [2] "a2a5ad43-6796-41d8-9a90-a7c86a5e8fb7"
+#> [3] "7804585d-fa51-44d5-b465-baaccc094d05"
 #> 
 #> $gained
 #> character(0)
 #> 
 #> $preserved
-#> [1] "c40fdd76-151a-4d89-bacb-8aa851c00ce9"
-#> [2] "92e4a7c2-8d0d-4615-bb08-77504846de1b"
+#> [1] "654a495e-ab4d-452f-a7dc-4b0adf50cb90"
+#> [2] "4b382c84-4410-4c4c-8ca1-e68fd1bd5945"
 ```
 
 The comparison shows exactly which rows were lost (filtered out) and
@@ -343,12 +354,12 @@ batch2 <- data.frame(x = 4:6)  # No IDs yet
 combined <- bind_id(batch1, batch2)
 combined
 #>                                    .id x
-#> 1 7f499fa3-971c-45c4-99ca-fa70430b21ce 1
-#> 2 61f3cfa8-fff0-4ba2-85bb-55dd8ce9f94a 2
-#> 3 79f10eb4-ed88-4141-9829-6ba1395b2772 3
-#> 4 ef62f6e8-9d23-4a01-a73f-7fb8ec92faa0 4
-#> 5 01547a24-ae01-4e57-bac7-b592b947de7c 5
-#> 6 516d3536-ac2d-4c82-8f3d-2bb65061ea08 6
+#> 1 35af023d-9e78-47a5-8922-78074f2b7c02 1
+#> 2 485d3296-595c-4d15-8ddf-e47c2c979f89 2
+#> 3 ade8dfea-0a66-4296-ab4a-8e8e41c5dead 3
+#> 4 ffac5bca-7e2d-4f77-81dc-866f0bf0866e 4
+#> 5 e785f0b6-955a-4b78-b51a-500e22775911 5
+#> 6 682657f8-5e90-41de-972c-2e7439c74daf 6
 ```
 
 ------------------------------------------------------------------------
@@ -376,7 +387,7 @@ reference_data <- data.frame(
 ) |>
   key(region_id) |>
   stamp()
-#> ✔ Snapshot committed: 76a76466...
+#> ✔ Snapshot committed: fc9fb259...
 ```
 
 ### Check for drift
@@ -387,7 +398,7 @@ reference_data <- data.frame(
 check_drift(reference_data)
 #> 
 #> ── Drift Report
-#> Snapshot: 76a76466... (2026-03-04 12:49)
+#> Snapshot: fc9fb259... (2026-10-23 01:16)
 #> ✔ No drift detected
 ```
 
@@ -403,7 +414,7 @@ modified_data$tax_rate[2] <- 0.21
 check_drift(modified_data)
 #> 
 #> ── Drift Report
-#> Snapshot: 76a76466... (2026-03-04 12:49)
+#> Snapshot: fc9fb259... (2026-10-23 01:16)
 #> ! Drift detected
 #> 
 #> ── Value Diff

@@ -1,5 +1,15 @@
 # Design Philosophy
 
+## Installation
+
+``` r
+
+install.packages("keyed")            # CRAN
+
+install.packages("pak")              # development version
+pak::pak("gcol33/keyed")
+```
+
 ## The Flat-File Reality
 
 Most data analysis doesn’t happen in databases. It happens with: - CSV

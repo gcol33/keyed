@@ -1,0 +1,156 @@
+---
+output: github_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+options(width = 80)
+```
+
+# keyed
+
+*a key that stays unique through the pipeline*
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/gcol33/keyed/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/gcol33/keyed/graph/badge.svg)](https://app.codecov.io/gh/gcol33/keyed)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CRAN status](https://www.r-pkg.org/badges/version/keyed)](https://CRAN.R-project.org/package=keyed)
+<!-- badges: end -->
+
+keyed attaches a primary key to a data frame read from a flat file, such as a CSV or Excel export, and stops a [dplyr](https://dplyr.tidyverse.org) pipeline at the step that makes the key non-unique.
+
+The key is stored with the data frame as metadata, and keyed's methods for the dplyr verbs carry it from step to step. Whenever a step changes the key values or the number of rows, the key is checked for uniqueness with [vctrs](https://vctrs.r-lib.org), and a step that creates duplicates stops with an error. A database enforces this through its schema, while a CSV accepts whatever it is given. You can then correct the data, or remove the key with `unkey()` when the step is meant to repeat key values. keyed supports:
+
+- **Checks at chosen points.** `lock_unique()`, `lock_no_na()`, `lock_complete()`, `lock_coverage()` and `lock_nrow()` test a condition inside a pipeline and warn when it fails, or stop with `.strict = TRUE`.
+- **Previewing a join.** [`diagnose_join()`](https://gillescolling.com/keyed/reference/diagnose_join.html) reports whether a join is one-to-one, one-to-many or many-to-many before it runs, with the more detailed report of [joinspy](https://gillescolling.com/joinspy/) when that package is installed.
+- **Tracking rows without a natural key.** `add_id()` gives each row an identifier that stays with it through filters and joins, and `compare_ids()` lists the rows a step lost.
+- **Seeing what a step changed.** A data frame marked with [`watch()`](https://gillescolling.com/keyed/reference/watch.html) is saved before each dplyr verb, and `check_drift()` reports the rows removed, added and modified since then, column by column.
+
+## Installation
+
+```r
+install.packages("keyed")
+```
+
+Development version:
+
+```r
+# install.packages("pak")
+pak::pak("gcol33/keyed")
+```
+
+## Usage
+
+1. Declare the key columns with `key()`.
+2. Transform the data with dplyr as usual. The key is checked whenever a step changes the key values or the number of rows.
+3. Add checks such as `lock_no_na()` where the pipeline relies on a condition.
+
+`key()` takes a data frame and one or more unquoted column names. It checks that their combined values are unique and warns if they are not.
+
+```{r key}
+library(keyed)
+library(dplyr, warn.conflicts = FALSE)
+
+customers <- data.frame(
+  customer_id = c(1, 2, 3),
+  name = c("Ann", "Bob", "Cy")
+)
+customers <- key(customers, customer_id)
+customers
+```
+
+A filter keeps the key, since removing rows cannot create duplicates. A join that repeats customers stops with an error:
+
+```{r join, error = TRUE}
+orders <- data.frame(order_id = 1:5, customer_id = c(1, 1, 2, 3, 3))
+
+customers |> filter(customer_id > 1) |> has_key()
+left_join(customers, orders, by = "customer_id")
+```
+
+Customers 1 and 3 have two orders each, so the joined table has five rows and `customer_id` is no longer unique. `diagnose_join(customers, orders, by = "customer_id")` shows this before the join runs. To keep the five rows, drop the key first with `unkey()`.
+
+## Checks at chosen points
+
+A lock tests one condition and returns the data unchanged, so it sits inside a pipeline:
+
+```{r locks}
+emails <- data.frame(id = 1:3, email = c("a@x.org", NA, "c@x.org"))
+checked <- emails |> lock_unique(id) |> lock_no_na(email)
+```
+
+`lock_complete()` checks every column for missing values, `lock_coverage()` sets a minimum share of non-missing values, and `lock_nrow()` a range of row counts. Each one warns by default and stops with `.strict = TRUE`.
+
+## Tracking rows and changes
+
+`add_id()` adds a column of row identifiers (UUIDs when the [uuid](https://www.rforge.net/uuid) package is installed), and `compare_ids()` returns the identifiers lost, gained and kept between two versions of a table:
+
+```r
+tracked <- add_id(customers)
+kept <- tracked |> filter(name != "Bob")
+compare_ids(tracked, kept)
+```
+
+For values, `diff()` aligns two versions of a keyed table by the key and counts the rows removed, added and modified, with the changes per column:
+
+```{r diff}
+old <- key(data.frame(id = 1:3, x = c("a", "b", "c")), id)
+new <- data.frame(id = 2:4, x = c("B", "c", "d"))
+diff(old, new)
+```
+
+`watch()` makes this automatic: each dplyr verb on a watched table first saves a snapshot in memory, and `check_drift()` compares the result with it. `unwatch()` stops the snapshots and `clear_all_snapshots()` frees the memory.
+
+## keyed or pointblank / validate?
+
+| | keyed | pointblank, validate |
+|---|---|---|
+| Setup | A key declared inline | A schema or rule set written beforehand |
+| Checks during dplyr steps | Yes, on every verb that changes the key or row count | No |
+| Scope | Keys, locks, row identifiers, drift | Full validation rule sets and reports |
+| Suited to | Interactive work with CSV and Excel files | Batch validation and reporting |
+
+For a schema that is enforced on every write, a database such as SQLite or DuckDB is the tool, and [pointblank](https://rstudio.github.io/pointblank/) or [validate](https://github.com/data-cleaning/validate) produce full validation reports. keyed holds a few assumptions about a flat file during interactive work, without a database or a rule set.
+
+## Documentation
+
+Start with the [Quick Start](https://gillescolling.com/keyed/articles/quickstart.html): keys, locks, join diagnostics, row identifiers and drift on one monthly-export example.
+
+- [Design Philosophy](https://gillescolling.com/keyed/articles/philosophy.html): where the checks run, why a broken key is an error and a failed lock a warning, and what keyed leaves to other tools.
+- [Full reference](https://gillescolling.com/keyed/reference/): every function, grouped by job.
+
+## Getting help
+
+Questions and bug reports go to the [GitHub issues](https://github.com/gcol33/keyed/issues). A bug report is easiest to act on with a small reproducible example, for instance made with [reprex](https://reprex.tidyverse.org/).
+
+## Contributing
+
+Pull requests are welcome; see the [contributing guide](https://gillescolling.com/keyed/CONTRIBUTING.html).
+
+## Support
+
+> "Software is like sex: it's better when it's free." — Linus Torvalds
+
+I'm a PhD student who builds R packages in my free time because I believe good tools should be free and open. I started these projects for my own work and figured others might find them useful too.
+
+If this package saved you some time, buying me a coffee is a nice way to say thanks. It helps with my coffee addiction.
+
+[![Buy Me A Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/gcol33)
+
+## License
+
+keyed is licensed under MIT.
+
+## Citation
+
+```{r citation, echo = FALSE, results = "asis"}
+cit <- citation("keyed")
+fence <- function(lang, x) cat("```", lang, "\n", paste(x, collapse = "\n\n"), "\n```\n\n", sep = "")
+cat(attr(cit, "mheader"), "\n\n", sep = "")
+fence("text", format(cit, style = "text"))
+cat("BibTeX:\n\n")
+fence("bibtex", format(cit, style = "bibtex"))
+```
+
+Download the citation as [BibTeX](https://gillescolling.com/keyed/keyed.bib) or [RIS](https://gillescolling.com/keyed/keyed.ris).

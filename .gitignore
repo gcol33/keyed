@@ -7,3 +7,6 @@ inst/doc
 *.Rcheck/
 /doc/
 /Meta/
+
+# Local run scripts
+.run*

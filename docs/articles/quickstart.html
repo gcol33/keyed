@@ -85,7 +85,7 @@
                         <h4 data-toc-skip class="author">Gilles
 Colling</h4>
             
-            <h4 data-toc-skip class="date">2026-10-10</h4>
+            <h4 data-toc-skip class="date">2026-10-23</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/gcol33/keyed/blob/HEAD/vignettes/quickstart.Rmd" class="external-link"><code>vignettes/quickstart.Rmd</code></a></small>
       <div class="d-none name"><code>quickstart.Rmd</code></div>
@@ -226,7 +226,7 @@ consistently to each import.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Filter preserves key</span></span>
 <span><span class="va">premium_customers</span> <span class="op">&lt;-</span> <span class="va">january_clean</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">segment</span> <span class="op">==</span> <span class="st">"premium"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">segment</span> <span class="op">==</span> <span class="st">"premium"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/has_key.html">has_key</a></span><span class="op">(</span><span class="va">premium_customers</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
@@ -235,7 +235,7 @@ consistently to each import.</p>
 <span></span>
 <span><span class="co"># Mutate preserves key</span></span>
 <span><span class="va">enriched</span> <span class="op">&lt;-</span> <span class="va">january_clean</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">mutate</span><span class="op">(</span>domain <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">".*@"</span>, <span class="st">""</span>, <span class="va">email</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>domain <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">".*@"</span>, <span class="st">""</span>, <span class="va">email</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/has_key.html">has_key</a></span><span class="op">(</span><span class="va">enriched</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
@@ -248,7 +248,7 @@ consistently to each import.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># This creates duplicates - keyed stops you</span></span>
 <span><span class="va">january_clean</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">mutate</span><span class="op">(</span>customer_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>customer_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;"> in `mutate()`:</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Key is no longer unique after transformation.</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> Use `unkey()` first if you intend to break uniqueness.</span></span></code></pre></div>
@@ -256,7 +256,7 @@ consistently to each import.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">january_clean</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/unkey.html">unkey</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">mutate</span><span class="op">(</span>customer_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>customer_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 3</span></span></span>
 <span><span class="co">#&gt;   customer_id email             segment</span></span>
 <span><span class="co">#&gt;         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
@@ -313,7 +313,7 @@ have multiple orders</p></li>
 <li><p><strong>Coverage</strong>: Shows how many keys match vs. don’t
 match</p></li>
 </ul>
-<p>Now you know what to expect. A <code>left_join()</code> will create 8
+<p>Now you know what to expect. A <code><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join()</a></code> will create 8
 rows (one per order), not 5 (one per customer).</p>
 </div>
 <div class="section level3">
@@ -359,11 +359,11 @@ identifiers that survive transformations.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># Key:            customer_id | .id</span></span></span>
 <span><span class="co">#&gt;   .id                                  customer_id name  tier  </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> f4166c18-2506-4e71-a734-3ab4514151e0           1 Alice gold  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> c77ddfeb-b846-4fb5-8840-e21271d396af           2 Bob   silver</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 026e2e36-6b49-43b2-9129-2850551b6e44           3 Carol gold  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> fec590d8-4c6b-4e2d-9b48-b9250d57390f           4 Dave  bronze</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 04a87bd6-637a-4289-9dec-7d9c7b33128e           5 Eve   silver</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 654a495e-ab4d-452f-a7dc-4b0adf50cb90           1 Alice gold  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 0545c8f7-6da8-442e-837e-c1e64fead92c           2 Bob   silver</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 4b382c84-4410-4c4c-8ca1-e68fd1bd5945           3 Carol gold  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> a2a5ad43-6796-41d8-9a90-a7c86a5e8fb7           4 Dave  bronze</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 7804585d-fa51-44d5-b465-baaccc094d05           5 Eve   silver</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="ids-survive-transformations">IDs survive transformations<a class="anchor" aria-label="anchor" href="#ids-survive-transformations"></a>
@@ -371,25 +371,25 @@ identifiers that survive transformations.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Filter: IDs persist</span></span>
 <span><span class="va">gold_customers</span> <span class="op">&lt;-</span> <span class="va">customers_tracked</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">tier</span> <span class="op">==</span> <span class="st">"gold"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">tier</span> <span class="op">==</span> <span class="st">"gold"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_id.html">get_id</a></span><span class="op">(</span><span class="va">gold_customers</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "f4166c18-2506-4e71-a734-3ab4514151e0"</span></span>
-<span><span class="co">#&gt; [2] "026e2e36-6b49-43b2-9129-2850551b6e44"</span></span>
+<span><span class="co">#&gt; [1] "654a495e-ab4d-452f-a7dc-4b0adf50cb90"</span></span>
+<span><span class="co">#&gt; [2] "4b382c84-4410-4c4c-8ca1-e68fd1bd5945"</span></span>
 <span></span>
 <span><span class="co"># Compare with original</span></span>
 <span><span class="fu"><a href="../reference/compare_ids.html">compare_ids</a></span><span class="op">(</span><span class="va">customers_tracked</span>, <span class="va">gold_customers</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $lost</span></span>
-<span><span class="co">#&gt; [1] "c77ddfeb-b846-4fb5-8840-e21271d396af"</span></span>
-<span><span class="co">#&gt; [2] "fec590d8-4c6b-4e2d-9b48-b9250d57390f"</span></span>
-<span><span class="co">#&gt; [3] "04a87bd6-637a-4289-9dec-7d9c7b33128e"</span></span>
+<span><span class="co">#&gt; [1] "0545c8f7-6da8-442e-837e-c1e64fead92c"</span></span>
+<span><span class="co">#&gt; [2] "a2a5ad43-6796-41d8-9a90-a7c86a5e8fb7"</span></span>
+<span><span class="co">#&gt; [3] "7804585d-fa51-44d5-b465-baaccc094d05"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $gained</span></span>
 <span><span class="co">#&gt; character(0)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $preserved</span></span>
-<span><span class="co">#&gt; [1] "f4166c18-2506-4e71-a734-3ab4514151e0"</span></span>
-<span><span class="co">#&gt; [2] "026e2e36-6b49-43b2-9129-2850551b6e44"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "654a495e-ab4d-452f-a7dc-4b0adf50cb90"</span></span>
+<span><span class="co">#&gt; [2] "4b382c84-4410-4c4c-8ca1-e68fd1bd5945"</span></span></code></pre></div>
 <p>The comparison shows exactly which rows were lost (filtered out) and
 which were preserved.</p>
 </div>
@@ -406,12 +406,12 @@ conflicts:</p>
 <span><span class="va">combined</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bind_id.html">bind_id</a></span><span class="op">(</span><span class="va">batch1</span>, <span class="va">batch2</span><span class="op">)</span></span>
 <span><span class="va">combined</span></span>
 <span><span class="co">#&gt;                                    .id x</span></span>
-<span><span class="co">#&gt; 1 4df89baa-0c65-471c-b6d6-d3ffff36f845 1</span></span>
-<span><span class="co">#&gt; 2 bd096c04-9319-49a3-991e-999baf494348 2</span></span>
-<span><span class="co">#&gt; 3 90e0c3b1-47ac-4f95-864a-5e6b2f12cda2 3</span></span>
-<span><span class="co">#&gt; 4 652d43a1-c179-409a-a2ae-acc4fcf71773 4</span></span>
-<span><span class="co">#&gt; 5 c7f90886-daf9-4d58-9446-b3fae4d8974d 5</span></span>
-<span><span class="co">#&gt; 6 7abd9b4d-6ac9-435d-befb-b1a011ab5ea2 6</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 35af023d-9e78-47a5-8922-78074f2b7c02 1</span></span>
+<span><span class="co">#&gt; 2 485d3296-595c-4d15-8ddf-e47c2c979f89 2</span></span>
+<span><span class="co">#&gt; 3 ade8dfea-0a66-4296-ab4a-8e8e41c5dead 3</span></span>
+<span><span class="co">#&gt; 4 ffac5bca-7e2d-4f77-81dc-866f0bf0866e 4</span></span>
+<span><span class="co">#&gt; 5 e785f0b6-955a-4b78-b51a-500e22775911 5</span></span>
+<span><span class="co">#&gt; 6 682657f8-5e90-41de-972c-2e7439c74daf 6</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -446,7 +446,7 @@ and check for drift with <code><a href="../reference/check_drift.html">check_dri
 <span><span class="fu"><a href="../reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">reference_data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Drift Report</span></span>
-<span><span class="co">#&gt; Snapshot: fc9fb259... (2026-10-10 14:39)</span></span>
+<span><span class="co">#&gt; Snapshot: fc9fb259... (2026-10-23 01:16)</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> No drift detected</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -461,7 +461,7 @@ and check for drift with <code><a href="../reference/check_drift.html">check_dri
 <span><span class="fu"><a href="../reference/check_drift.html">check_drift</a></span><span class="op">(</span><span class="va">modified_data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Drift Report</span></span>
-<span><span class="co">#&gt; Snapshot: fc9fb259... (2026-10-10 14:39)</span></span>
+<span><span class="co">#&gt; Snapshot: fc9fb259... (2026-10-23 01:16)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Drift detected</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Value Diff</span></span>

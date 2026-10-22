@@ -36,12 +36,14 @@ is used.
 ## Details
 
 If the joinspy package is installed, this function delegates to
-`joinspy::join_spy()` for enhanced diagnostics including whitespace
-detection, encoding issues, and detailed match analysis.
+[`joinspy::join_spy()`](https://gillescolling.com/joinspy/reference/join_spy.html)
+for enhanced diagnostics including whitespace detection, encoding
+issues, and detailed match analysis.
 
 ## See also
 
-`joinspy::join_spy()` for enhanced diagnostics (if installed)
+[`joinspy::join_spy()`](https://gillescolling.com/joinspy/reference/join_spy.html)
+for enhanced diagnostics (if installed)
 
 ## Examples
 

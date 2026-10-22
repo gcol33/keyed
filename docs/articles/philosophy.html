@@ -85,7 +85,7 @@
                         <h4 data-toc-skip class="author">Gilles
 Colling</h4>
             
-            <h4 data-toc-skip class="date">2026-10-10</h4>
+            <h4 data-toc-skip class="date">2026-10-23</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/gcol33/keyed/blob/HEAD/vignettes/philosophy.Rmd" class="external-link"><code>vignettes/philosophy.Rmd</code></a></small>
       <div class="d-none name"><code>philosophy.Rmd</code></div>
@@ -184,10 +184,10 @@ inevitable.</p>
 <span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/key.html">key</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">id</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># No check here - just a filter</span></span>
-<span><span class="va">df_filtered</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">id</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">df_filtered</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">id</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># No check here - just adding a column</span></span>
-<span><span class="va">df_enriched</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu">mutate</span><span class="op">(</span>upper <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">df_enriched</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>upper <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Check happens HERE - at explicit assertion</span></span>
 <span><span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/lock_no_na.html">lock_no_na</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span></span></code></pre></div>
@@ -233,14 +233,14 @@ explicit acknowledgment:</p>
 <span>  <span class="fu"><a href="../reference/key.html">key</a></span><span class="op">(</span><span class="va">id</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># This would create duplicate ids - keyed stops you</span></span>
-<span><span class="va">df</span> <span class="op">|&gt;</span> <span class="fu">mutate</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;"> in `mutate()`:</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Key is no longer unique after transformation.</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> Use `unkey()` first if you intend to break uniqueness.</span></span></code></pre></div>
 <p>To proceed, use <code><a href="../reference/unkey.html">unkey()</a></code> to explicitly acknowledge you’re
 breaking the key:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/unkey.html">unkey</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">mutate</span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/unkey.html">unkey</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 2</span></span></span>
 <span><span class="co">#&gt;      id x    </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>

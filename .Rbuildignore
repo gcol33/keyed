@@ -15,3 +15,7 @@
 ^cookies\.txt$
 ^keyed_.*\.tar\.gz$
 ^deprecated\.md$
+^README\.Rmd$
+^\.run.*$
+^sidecars$
+^CITATION\.cff$
