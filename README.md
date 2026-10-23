@@ -12,6 +12,10 @@ coverage](https://codecov.io/gh/gcol33/keyed/graph/badge.svg)](https://app.codec
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/keyed)](https://CRAN.R-project.org/package=keyed)
+[![CRAN
+downloads](https://cranlogs.r-pkg.org/badges/grand-total/keyed)](https://cran.r-project.org/package=keyed)
+[![Monthly
+downloads](https://cranlogs.r-pkg.org/badges/keyed)](https://cran.r-project.org/package=keyed)
 <!-- badges: end -->
 
 keyed attaches a primary key to a data frame read from a flat file, such
