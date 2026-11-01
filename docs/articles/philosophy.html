@@ -108,8 +108,8 @@ Colling</h4>
 <div class="section level2">
 <h2 id="the-flat-file-reality">The Flat-File Reality<a class="anchor" aria-label="anchor" href="#the-flat-file-reality"></a>
 </h2>
-<p>Most data analysis doesn’t happen in databases. It happens with: -
-CSV exports from business systems</p>
+<p>Most data analysis happens outside databases, with: - CSV exports
+from business systems</p>
 <ul>
 <li><p>Excel files from collaborators</p></li>
 <li><p>Periodic data dumps with no schema</p></li>
@@ -315,10 +315,9 @@ context. keyed stays minimal by design.</p>
 <li><p><strong>Detect drift between versions</strong> —
 <code><a href="../reference/stamp.html">stamp()</a></code>, <code><a href="../reference/check_drift.html">check_drift()</a></code></p></li>
 </ol>
-<p>The package warns when assumptions break. It doesn’t enforce
-correctness absolutely. This constraint is intentional—it keeps keyed
-appropriate for the messy, schema-free world where most data analysis
-actually happens.</p>
+<p>The package warns when assumptions break and does not enforce
+correctness absolutely, which keeps keyed usable on the messy,
+schema-free files where most data analysis happens.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

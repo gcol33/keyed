@@ -12,8 +12,8 @@ pak::pak("gcol33/keyed")
 
 ## The Flat-File Reality
 
-Most data analysis doesn’t happen in databases. It happens with: - CSV
-exports from business systems
+Most data analysis happens outside databases, with: - CSV exports from
+business systems
 
 - Excel files from collaborators
 
@@ -177,7 +177,6 @@ keyed helps you:
     [`stamp()`](https://gillescolling.com/keyed/reference/stamp.md),
     [`check_drift()`](https://gillescolling.com/keyed/reference/check_drift.md)
 
-The package warns when assumptions break. It doesn’t enforce correctness
-absolutely. This constraint is intentional—it keeps keyed appropriate
-for the messy, schema-free world where most data analysis actually
-happens.
+The package warns when assumptions break and does not enforce
+correctness absolutely, which keeps keyed usable on the messy,
+schema-free files where most data analysis happens.
