@@ -185,7 +185,7 @@ during interactive work, without a database or a rule set.
 ## Documentation
 
 Start with the [Quick
-Start](https://gillescolling.com/keyed/articles/quickstart.html): keys,
+Start](https://gillescolling.com/keyed/articles/keyed.html): keys,
 locks, join diagnostics, row identifiers and drift on one monthly-export
 example.
 

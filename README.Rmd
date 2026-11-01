@@ -117,7 +117,7 @@ For a schema that is enforced on every write, a database such as SQLite or DuckD
 
 ## Documentation
 
-Start with the [Quick Start](https://gillescolling.com/keyed/articles/quickstart.html): keys, locks, join diagnostics, row identifiers and drift on one monthly-export example.
+Start with the [Quick Start](https://gillescolling.com/keyed/articles/keyed.html): keys, locks, join diagnostics, row identifiers and drift on one monthly-export example.
 
 - [Design Philosophy](https://gillescolling.com/keyed/articles/philosophy.html): where the checks run, why a broken key is an error and a failed lock a warning, and what keyed leaves to other tools.
 - [Full reference](https://gillescolling.com/keyed/reference/): every function, grouped by job.

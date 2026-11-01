@@ -1,9 +1,5 @@
 # Articles
 
-### Get started
-
-- [Quick Start](https://gillescolling.com/keyed/articles/quickstart.md):
-
 ### Background
 
 - [Design
