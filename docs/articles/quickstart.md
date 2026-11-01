@@ -302,11 +302,11 @@ customers_tracked
 #> # Key:            customer_id | .id
 #>   .id                                  customer_id name  tier  
 #>   <chr>                                      <int> <chr> <chr> 
-#> 1 654a495e-ab4d-452f-a7dc-4b0adf50cb90           1 Alice gold  
-#> 2 0545c8f7-6da8-442e-837e-c1e64fead92c           2 Bob   silver
-#> 3 4b382c84-4410-4c4c-8ca1-e68fd1bd5945           3 Carol gold  
-#> 4 a2a5ad43-6796-41d8-9a90-a7c86a5e8fb7           4 Dave  bronze
-#> 5 7804585d-fa51-44d5-b465-baaccc094d05           5 Eve   silver
+#> 1 02843d80-8a99-4ce7-87d3-8a87a79484d9           1 Alice gold  
+#> 2 337b6573-b595-4460-9fad-7643ece36300           2 Bob   silver
+#> 3 8a528add-4b31-49ec-86f4-d7c4e973c1ec           3 Carol gold  
+#> 4 3b9e05e6-5296-4df4-8fd8-1b6211f28954           4 Dave  bronze
+#> 5 c842acfe-3094-43a9-b981-0bda7f0f3805           5 Eve   silver
 ```
 
 ### IDs survive transformations
@@ -318,22 +318,22 @@ gold_customers <- customers_tracked |>
   filter(tier == "gold")
 
 get_id(gold_customers)
-#> [1] "654a495e-ab4d-452f-a7dc-4b0adf50cb90"
-#> [2] "4b382c84-4410-4c4c-8ca1-e68fd1bd5945"
+#> [1] "02843d80-8a99-4ce7-87d3-8a87a79484d9"
+#> [2] "8a528add-4b31-49ec-86f4-d7c4e973c1ec"
 
 # Compare with original
 compare_ids(customers_tracked, gold_customers)
 #> $lost
-#> [1] "0545c8f7-6da8-442e-837e-c1e64fead92c"
-#> [2] "a2a5ad43-6796-41d8-9a90-a7c86a5e8fb7"
-#> [3] "7804585d-fa51-44d5-b465-baaccc094d05"
+#> [1] "337b6573-b595-4460-9fad-7643ece36300"
+#> [2] "3b9e05e6-5296-4df4-8fd8-1b6211f28954"
+#> [3] "c842acfe-3094-43a9-b981-0bda7f0f3805"
 #> 
 #> $gained
 #> character(0)
 #> 
 #> $preserved
-#> [1] "654a495e-ab4d-452f-a7dc-4b0adf50cb90"
-#> [2] "4b382c84-4410-4c4c-8ca1-e68fd1bd5945"
+#> [1] "02843d80-8a99-4ce7-87d3-8a87a79484d9"
+#> [2] "8a528add-4b31-49ec-86f4-d7c4e973c1ec"
 ```
 
 The comparison shows exactly which rows were lost (filtered out) and
@@ -354,12 +354,12 @@ batch2 <- data.frame(x = 4:6)  # No IDs yet
 combined <- bind_id(batch1, batch2)
 combined
 #>                                    .id x
-#> 1 35af023d-9e78-47a5-8922-78074f2b7c02 1
-#> 2 485d3296-595c-4d15-8ddf-e47c2c979f89 2
-#> 3 ade8dfea-0a66-4296-ab4a-8e8e41c5dead 3
-#> 4 ffac5bca-7e2d-4f77-81dc-866f0bf0866e 4
-#> 5 e785f0b6-955a-4b78-b51a-500e22775911 5
-#> 6 682657f8-5e90-41de-972c-2e7439c74daf 6
+#> 1 720b124b-9d90-43f3-9dc4-d85331ed9262 1
+#> 2 e0d81cdf-bb35-45c9-b634-f0a4f13e6b66 2
+#> 3 3966d43b-4924-4ce1-a6af-62d4f9f5c6d5 3
+#> 4 f143199c-1380-4206-965f-d8db928d3d10 4
+#> 5 6c713ba5-700c-4b0a-a90d-8c9d8c3eea92 5
+#> 6 1b68412a-9466-4162-a7bf-f22da60ababb 6
 ```
 
 ------------------------------------------------------------------------
@@ -398,7 +398,7 @@ reference_data <- data.frame(
 check_drift(reference_data)
 #> 
 #> ── Drift Report
-#> Snapshot: fc9fb259... (2026-10-23 01:16)
+#> Snapshot: fc9fb259... (2026-11-01 16:53)
 #> ✔ No drift detected
 ```
 
@@ -414,7 +414,7 @@ modified_data$tax_rate[2] <- 0.21
 check_drift(modified_data)
 #> 
 #> ── Drift Report
-#> Snapshot: fc9fb259... (2026-10-23 01:16)
+#> Snapshot: fc9fb259... (2026-11-01 16:53)
 #> ! Drift detected
 #> 
 #> ── Value Diff

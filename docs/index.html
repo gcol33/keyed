@@ -48,13 +48,16 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="articles/quickstart.html">Get Started</a></li>
+<li class="nav-item"><a class="nav-link" href="articles/quickstart.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/quickstart.html">Quick Start</a></li>
+<li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Background</h6></li>
     <li><a class="dropdown-item" href="articles/philosophy.html">Design Philosophy</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="articles/index.html">More articles...</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -63,6 +66,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/gcol33/keyed" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
@@ -71,7 +75,6 @@
     <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
   </ul>
 </li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/gcol33/keyed" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
       </ul>
 </div>
 
@@ -143,7 +146,7 @@
 <span><span class="co">#&gt; Error in `dplyr_reconstruct_dispatch()`:</span></span>
 <span><span class="co">#&gt; ! Key is no longer unique after transformation.</span></span>
 <span><span class="co">#&gt; ℹ Use `unkey()` first if you intend to break uniqueness.</span></span></code></pre></div>
-<p>Customers 1 and 3 have two orders each, so the joined table has five rows and <code>customer_id</code> is no longer unique. <code>diagnose_join(customers, orders, by = "customer_id")</code> shows this before the join runs. To keep the five rows, drop the key first with <code><a href="reference/unkey.html">unkey()</a></code>.</p>
+<p>Customers 1 and 3 have two orders each, so the joined table has five rows and the customer identifier is no longer unique. Running <code><a href="reference/diagnose_join.html">diagnose_join()</a></code> on the two tables shows this before the join runs. To keep the five rows, drop the key first with <code><a href="reference/unkey.html">unkey()</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="checks-at-chosen-points">Checks at chosen points<a class="anchor" aria-label="anchor" href="#checks-at-chosen-points"></a>
@@ -201,9 +204,9 @@
 <td>A schema or rule set written beforehand</td>
 </tr>
 <tr>
-<td>Checks during dplyr steps</td>
-<td>Yes, on every verb that changes the key or row count</td>
-<td>No</td>
+<td>When checks run</td>
+<td>On every dplyr verb that changes the key or the row count</td>
+<td>When the validation function is called on a table</td>
 </tr>
 <tr>
 <td>Scope</td>
@@ -320,6 +323,8 @@ doi:10.32614/CRAN.package.keyed
 <li><a href="https://app.codecov.io/gh/gcol33/keyed" class="external-link"><img src="https://codecov.io/gh/gcol33/keyed/graph/badge.svg" alt="Codecov test coverage"></a></li>
 <li><a href="https://opensource.org/licenses/MIT" class="external-link"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></li>
 <li><a href="https://CRAN.R-project.org/package=keyed" class="external-link"><img src="https://www.r-pkg.org/badges/version/keyed" alt="CRAN status"></a></li>
+<li><a href="https://cran.r-project.org/package=keyed" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/keyed" alt="CRAN downloads"></a></li>
+<li><a href="https://cran.r-project.org/package=keyed" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/keyed" alt="Monthly downloads"></a></li>
 </ul>
 </div>
 

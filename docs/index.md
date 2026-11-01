@@ -110,9 +110,10 @@ left_join(customers, orders, by = "customer_id")
 ```
 
 Customers 1 and 3 have two orders each, so the joined table has five
-rows and `customer_id` is no longer unique.
-`diagnose_join(customers, orders, by = "customer_id")` shows this before
-the join runs. To keep the five rows, drop the key first with
+rows and the customer identifier is no longer unique. Running
+[`diagnose_join()`](https://gillescolling.com/keyed/reference/diagnose_join.md)
+on the two tables shows this before the join runs. To keep the five
+rows, drop the key first with
 [`unkey()`](https://gillescolling.com/keyed/reference/unkey.md).
 
 ## Checks at chosen points
@@ -187,7 +188,7 @@ frees the memory.
 |  | keyed | pointblank, validate |
 |----|----|----|
 | Setup | A key declared inline | A schema or rule set written beforehand |
-| Checks during dplyr steps | Yes, on every verb that changes the key or row count | No |
+| When checks run | On every dplyr verb that changes the key or the row count | When the validation function is called on a table |
 | Scope | Keys, locks, row identifiers, drift | Full validation rule sets and reports |
 | Suited to | Interactive work with CSV and Excel files | Batch validation and reporting |
 

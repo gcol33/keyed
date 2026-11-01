@@ -36,19 +36,12 @@ navbar:
     - news
     right:
     - search
-    - lightswitch
     - github
+    - lightswitch
   components:
     intro:
-      text: Get Started
+      text: Get started
       href: articles/quickstart.html
-    articles:
-      text: Articles
-      menu:
-      - text: Quick Start
-        href: articles/quickstart.html
-      - text: Design Philosophy
-        href: articles/philosophy.html
     github:
       icon: fab fa-github
       href: https://github.com/gcol33/keyed
@@ -107,10 +100,12 @@ reference:
   - find_duplicates
   - starts_with("summary")
 articles:
-- title: Getting Started
-  navbar: ~
+- title: Get started
   contents:
   - quickstart
+- title: Background
+  navbar: Background
+  contents:
   - philosophy
 footer:
   structure:
